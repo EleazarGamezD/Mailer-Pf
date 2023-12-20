@@ -25,7 +25,8 @@ Este proyecto, llamado Mailer-Portfolio, es una aplicación basada en Express.js
   FROM= Email que envia 
   TO=Email que recive  si se quiere hardcodear 
   APP_PORT=Puerto de la App por defecto 3000
-
+  ```
+  
 4. **Modo de Desarrollo:**
  
    ```bash
