@@ -18,15 +18,14 @@ Este proyecto, llamado Mailer-Portfolio, es una aplicación basada en Express.js
    
 
 3. **Renombra el Archivo .env_template:**
-   
+
    ```bash
-  GMAIL_USER= usuario Gmail
-  GMAIL_PASSWORD= Clave Gmail "esta debe ser la clave para Apps"
-  FROM= Email que envia 
-  TO=Email que recive  si se quiere hardcodear 
-  APP_PORT=Puerto de la App por defecto 3000
-  ```
-  
+   GMAIL_USER=usuario_Gmail
+   GMAIL_PASSWORD=Clave_Gmail  # (Esta debe ser la clave para Apps)
+   FROM=Email_que_envía 
+   TO=Email_que_recibe  # (si se quiere hardcodear)
+   APP_PORT=3000  # Puerto de la App por defecto
+
 4. **Modo de Desarrollo:**
  
    ```bash
