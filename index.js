@@ -3,16 +3,18 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv"; // importando modulo de lectura de archivo ENV variables de entornos
 import path from "path";
 import url from "url";
+import cors from "cors"
+
 dotenv.config(); // este comando llama al archivo de variable de entorno.
 
 const app = express();
-
 const appPort = process.env.APP_PORT || 3000;
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname,)));
 app.use(express.json());
+app.use(cors())
 
 const transporter = nodemailer.createTransport({
   host: "smtp.forwardemail.net",
