@@ -1,3 +1,4 @@
+import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv'; // importando modulo de lectura de archivo ENV variables de entornos
 import express from 'express';
@@ -190,10 +191,12 @@ app.post('/send', async (req, res) => {
 
 app.post('/verifyCaptcha', async (req, res) => {
   const { token } = req.body;
+  console.log(token);
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
   try {
     const response = await axios.post(url);
+    console.log(response.data);
     if (response.data.success) {
       res.status(200).json({ success: true });
     } else {
