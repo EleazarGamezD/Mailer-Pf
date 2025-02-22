@@ -12,32 +12,32 @@ Este proyecto, llamado Mailer-Portfolio, es una aplicación basada en Express.js
    git clone https://github.com/EleazarGamezD/Mailer-Pf.git
 
 2. **Instala las Dependencias:**
- 
+
    ```bash
    npm install
-   
+
 
 3. **Renombra el Archivo .env_template:**
 
    ```bash
    GMAIL_USER=usuario_Gmail
    GMAIL_PASSWORD=Clave_Gmail  # (Esta debe ser la clave para Apps)
-   FROM=Email_que_envía 
+   FROM=Email_que_envía
    TO=Email_que_recibe  # (si se quiere hardcodear)
    APP_PORT=3000  # Puerto de la App por defecto
-
+   RECAPTCHA_SECRET_KEY=Recaptcha_secret # clave secreta del recaptcha v3 
 4. **Modo de Desarrollo:**
- 
+
    ```bash
       npm run dev
 
-4. **Modo de Producción:**
- 
+5. **Modo de Producción:**
+
    ```bash
       npm start
 
-5. **Tecnologías Utilizadas:**
- 
+6. **Tecnologías Utilizadas:**
+
    ```bash
       Node.js
       Express.js
@@ -46,5 +46,5 @@ Este proyecto, llamado Mailer-Portfolio, es una aplicación basada en Express.js
       Nodemon
 
 **Autor**
- 
+
 Elezar Gamez

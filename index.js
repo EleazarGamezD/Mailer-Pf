@@ -1,9 +1,9 @@
-import express from "express";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv"; // importando modulo de lectura de archivo ENV variables de entornos
-import path from "path";
-import url from "url";
-import cors from "cors"
+import cors from 'cors';
+import dotenv from 'dotenv'; // importando modulo de lectura de archivo ENV variables de entornos
+import express from 'express';
+import nodemailer from 'nodemailer';
+import path from 'path';
+import url from 'url';
 
 dotenv.config(); // este comando llama al archivo de variable de entorno.
 
@@ -12,29 +12,28 @@ const appPort = process.env.APP_PORT || 3000;
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname,)));
+app.use(express.static(path.join(__dirname)));
 app.use(express.json());
-app.use(cors())
+app.use(cors());
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.forwardemail.net",
-  service: "gmail",
+  host: 'smtp.forwardemail.net',
+  service: 'gmail',
   port: 465,
   secure: true,
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASSWORD
-  }
+    pass: process.env.GMAIL_PASSWORD,
+  },
 });
 
-app.post("/send", async (req, res) => {
-
-  const { subject,  message , contactEmail, name } = req.body;
+app.post('/send', async (req, res) => {
+  const { subject, message, contactEmail, name } = req.body;
   const msg = {
     from: process.env.FROM,
     to: process.env.TO,
     subject,
-    html : `
+    html: `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -108,13 +107,13 @@ app.post("/send", async (req, res) => {
       </div>
     </body>
     </html>
-  `
+  `,
   };
   const toMsg = {
     from: process.env.FROM,
-    to:contactEmail,
-    subject: "Gracias por contactarme a traves de la web / Porfolio",
-      html: `
+    to: contactEmail,
+    subject: 'Gracias por contactarme a traves de la web / Porfolio',
+    html: `
     <!DOCTYPE html>
 <html lang="en">
 
@@ -176,19 +175,33 @@ app.post("/send", async (req, res) => {
 </body>
 
 </html>
-  `
-   };
+  `,
+  };
 
   try {
     const data = await transporter.sendMail(msg);
     const dataTO = await transporter.sendMail(toMsg);
-    res.status(200).json({data, dataTO});
+    res.status(200).json({ data, dataTO });
   } catch (error) {
     const messages = error;
     res.status(400).send(messages);
   }
 });
 
-app.listen(appPort, () =>
-  console.log(`ejecutando la app en el puerto ${appPort}`)
-);
+app.post('/verifyCaptcha', async (req, res) => {
+  const { token } = req.body;
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
+  try {
+    const response = await axios.post(url);
+    if (response.data.success) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(400).json({ success: false, 'error-codes': response.data['error-codes'] });
+    }
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.listen(appPort, () => console.log(`ejecutando la app en el puerto ${appPort}`));
