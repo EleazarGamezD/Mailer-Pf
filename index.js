@@ -191,7 +191,6 @@ app.post('/send', async (req, res) => {
 
 app.post('/verifyCaptcha', async (req, res) => {
   const { token } = req.body;
-  console.log(token);
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
   try {
