@@ -195,9 +195,8 @@ app.post('/verifyCaptcha', async (req, res) => {
   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
   try {
     const response = await axios.post(url);
-    console.log(response.data);
     if (response.data.success) {
-      res.status(200).json({ success: true });
+      res.status(200).json({ success: true, score: response.data.score });
     } else {
       res.status(400).json({ success: false, 'error-codes': response.data['error-codes'] });
     }
