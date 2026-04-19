@@ -31,6 +31,12 @@ const doc = {
       name: 'x-api-key',
       description: 'API key requerida para endpoints administrativos.',
     },
+    BearerAuth: {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'JWT requerido para endpoints privados del dashboard admin.',
+    },
   },
 };
 
@@ -114,7 +120,8 @@ function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocum
       }
 
       if (tag === 'Admin') {
-        addPath(normalizedPaths, `/api/admin${routePath}`, method, operation);
+        const normalizedAdminPath = routePath.startsWith('/api/admin') ? routePath : `/api/admin${routePath}`;
+        addPath(normalizedPaths, normalizedAdminPath, method, operation);
         continue;
       }
 

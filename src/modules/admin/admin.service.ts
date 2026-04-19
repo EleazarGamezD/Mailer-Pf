@@ -1,4 +1,11 @@
 import { getDatabase } from '../../config/db.js';
+import { AdminUsersRepository } from '../../repositories/admin-users.repository.js';
+import type { AdminUserDocument } from '../../types/domain.js';
+import { createHttpError } from '../../utils/http-error.js';
+import { signAdminToken } from '../../utils/jwt.js';
+import { hashPassword, verifyPassword } from '../../utils/password.js';
+
+const adminUsersRepository = new AdminUsersRepository();
 
 export async function seedInitialContent() {
   const db = getDatabase();
@@ -247,4 +254,128 @@ export async function seedInitialContent() {
     seeded: true,
     collections: ['projects', 'tech_skills', 'experience', 'testimonials', 'social_links', 'resumes', 'profile'],
   };
+}
+
+function sanitizeAdminUser(adminUser: AdminUserDocument | null) {
+  if (!adminUser) {
+    return null;
+  }
+
+  const { passwordHash: _passwordHash, ...safeAdminUser } = adminUser;
+  return safeAdminUser;
+}
+
+export async function createAdminUser(payload: Record<string, unknown>) {
+  const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : '';
+  const username = typeof payload.username === 'string' ? payload.username.trim().toLowerCase() : '';
+  const displayName = typeof payload.displayName === 'string' ? payload.displayName.trim() : '';
+  const password = typeof payload.password === 'string' ? payload.password : '';
+  const requestedRole = typeof payload.role === 'string' ? payload.role : 'admin';
+  const role = requestedRole === 'super_admin' || requestedRole === 'editor' ? requestedRole : 'admin';
+
+  if (!email || !username || !displayName || !password) {
+    throw createHttpError(400, 'email, username, displayName and password are required.');
+  }
+
+  if (password.length < 8) {
+    throw createHttpError(400, 'password must contain at least 8 characters.');
+  }
+
+  const existingUser = await adminUsersRepository.findOne({
+    $or: [{ email }, { username }],
+  } as never);
+
+  if (existingUser) {
+    throw createHttpError(409, 'An admin user with that email or username already exists.');
+  }
+
+  const now = new Date();
+  const passwordHash = await hashPassword(password);
+
+  const adminUser: AdminUserDocument = {
+    email,
+    username,
+    displayName,
+    passwordHash,
+    role,
+    active: true,
+    lastLoginAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const { insertedId } = await adminUsersRepository.create(adminUser);
+  const createdUser = await adminUsersRepository.findOne({ _id: insertedId } as never);
+
+  return {
+    created: true,
+    user: sanitizeAdminUser(createdUser),
+  };
+}
+
+export async function loginAdminUser(payload: Record<string, unknown>) {
+  const login =
+    typeof payload.email === 'string'
+      ? payload.email.trim().toLowerCase()
+      : typeof payload.login === 'string'
+        ? payload.login.trim().toLowerCase()
+        : '';
+  const password = typeof payload.password === 'string' ? payload.password : '';
+
+  if (!login || !password) {
+    throw createHttpError(400, 'email and password are required.');
+  }
+
+  const adminUser = await adminUsersRepository.findOne({
+    $or: [{ email: login }, { username: login }],
+  } as never);
+
+  if (!adminUser || !adminUser.active) {
+    throw createHttpError(401, 'Invalid admin credentials.');
+  }
+
+  const isValidPassword = await verifyPassword(password, adminUser.passwordHash);
+
+  if (!isValidPassword) {
+    throw createHttpError(401, 'Invalid admin credentials.');
+  }
+
+  const now = new Date();
+  await adminUsersRepository.updateById(adminUser._id!, {
+    lastLoginAt: now,
+    updatedAt: now,
+  });
+
+  const accessToken = signAdminToken({
+    sub: String(adminUser._id),
+    email: adminUser.email,
+    username: adminUser.username,
+    role: adminUser.role,
+  });
+
+  return {
+    authenticated: true,
+    accessToken,
+    tokenType: 'Bearer',
+    user: sanitizeAdminUser({
+      ...adminUser,
+      lastLoginAt: now,
+      updatedAt: now,
+    }),
+  };
+}
+
+export async function getAdminUserById(id: string) {
+  const database = getDatabase();
+  const { ObjectId } = await import('mongodb');
+
+  if (!ObjectId.isValid(id)) {
+    return null;
+  }
+
+  const adminUser = await database.collection<AdminUserDocument>('admin_users').findOne({
+    _id: new ObjectId(id),
+  });
+
+  return sanitizeAdminUser(adminUser);
 }

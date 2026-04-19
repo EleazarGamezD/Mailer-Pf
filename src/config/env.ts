@@ -24,6 +24,8 @@ export const env = {
   mongoUri: readRequiredEnv('MONGODB_URI'),
   mongoDbName: readEnv('MONGODB_DB_NAME', 'Porfolio'),
   adminApiKey: readRequiredEnv('ADMIN_API_KEY'),
+  jwtSecret: readEnv('JWT_SECRET', 'dev-jwt-secret'),
+  jwtExpiresIn: readEnv('JWT_EXPIRES_IN', '7d'),
   gmailUser: readEnv('GMAIL_USER'),
   gmailPassword: readEnv('GMAIL_PASSWORD'),
   mailFrom: readEnv('FROM'),

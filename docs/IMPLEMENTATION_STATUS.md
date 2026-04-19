@@ -14,27 +14,28 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Definir el dominio del portfolio dinámico.
 - [x] Migrar `Mailer-Pf` a TypeScript.
 - [x] Montar Express + MongoDB + Swagger.
-- [x] Dejar seguridad por `x-api-key` en mutaciones.
-- [x] Exponer endpoints base para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `resumes`, `testimonials`, `analytics`, `contact`, `admin`.
+- [x] Dejar seguridad por `x-api-key` en mutaciones públicas de CMS.
+- [x] Exponer endpoints base para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `resumes`, `testimonials`, `analytics`, `contact`.
 - [x] Verificar compilación TypeScript.
 - [x] Verificar arranque real del backend con `GET /health`.
-- [x] Corregir compatibilidad de mail templates para Node 20+ con `express-handlebars@7.1.3` y `nodemailer-express-handlebars@6.1.2`.
+- [x] Corregir compatibilidad de mail templates para Node 20+.
 - [x] Documentar arquitectura y continuidad.
-- [x] Documentar un tablero persistente de progreso para continuidad entre IAs.
 - [x] Crear script de seed inicial del contenido hardcodeado.
 - [x] Exponer endpoint admin para ejecutar el seed inicial.
-- [ ] Sembrar Mongo con el contenido inicial hardcodeado.
-- [x] Conectar Angular al backend para dejar de usar JSON local de forma progresiva.
-- [x] Iniciar migración del frontend en el bloque de `projects` del home.
-- [x] Migrar `about`, `skills`, `experience`, `socialLinks`, `projects` y `testimonials` a consumo real desde API.
-- [ ] Migrar `resumes` a consumo real desde API.
-- [ ] Terminar detalle de proyecto por id/slug.
-- [ ] Terminar bloque CV dinámico.
-- [ ] Terminar tarjetas dinámicas de proyectos.
+- [x] Conectar Angular al backend para retirar JSON locales.
+- [x] Migrar `projects`, `about`, `skills`, `experience`, `socialLinks`, `testimonials`, `hero` y `resumes` a consumo real desde API.
+- [x] Eliminar fallbacks `shared/Json/*` del contenido dinámico.
+- [x] Mover interfaces a `src/app/core/interfaces/<modulo>/...`.
+- [x] Eliminar mapeos intermedios en `projects` y `content` services.
+- [ ] Ejecutar seed inicial en el ambiente que se vaya a usar.
+- [ ] Terminar detalle de proyecto por `id/slug`.
+- [ ] Terminar diseño final de tarjetas dinámicas de proyectos.
 - [ ] Crear util frontend para compresión WebP + base64.
-- [ ] Implementar tracking más completo: project views, CV downloads, CTA clicks.
-- [ ] Crear login oculto y dashboard admin.
-- [ ] Crear CRUD admin en Angular.
+- [ ] Implementar tracking más completo de interacciones.
+- [ ] Reemplazar autenticación admin provisional por `admin users + JWT`.
+- [ ] Crear acceso oculto en header desktop y mobile.
+- [ ] Construir login admin SSR-safe.
+- [ ] Construir dashboard admin con tablas y vistas de edición.
 - [ ] Implementar traducción automática real al inglés para contenido dinámico.
 
 ## Estado por ambiente
@@ -43,39 +44,47 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 
 - [x] TypeScript configurado.
 - [x] `dist/` tratado como artefacto compilado.
-- [x] `.env.example` actualizado.
-- [x] Entrada serverless de Vercel corregida para servir la app Express actual.
-- [x] Swagger generado desde código.
-- [x] Swagger normalizado para exponer rutas montadas reales bajo `/api/*`.
-- [x] Swagger configurado para persistir `x-api-key` en la UI.
+- [x] `.env.example` iniciado.
+- [x] Entrada serverless de Vercel corregida para la app Express actual.
+- [x] Swagger configurado y visible en `/docs`.
+- [x] Swagger configurado para persistir `x-api-key`.
 - [x] Repositorios y servicios modularizados.
-- [x] Endpoints CRUD iniciales listos.
-- [x] Endpoint admin `POST /api/admin/seed-initial` agregado para correr el seed sin CLI.
-- [ ] Seed inicial ejecutado en Mongo.
-- [ ] Validaciones fuertes por payload.
-- [ ] Dashboard metrics agregadas avanzadas.
+- [x] Endpoints CRUD iniciales listos para contenido.
+- [x] Endpoint `POST /api/admin/seed-initial` agregado.
+- [x] Crear colección lógica `admin_users`.
+- [x] Añadir `JWT_SECRET` y expiración configurable.
+- [x] Crear endpoint `POST /api/admin/users` protegido por `x-api-key`.
+- [x] Crear endpoint `POST /api/admin/auth/login`.
+- [x] Crear endpoint `GET /api/admin/me`.
+- [x] Crear middleware Bearer para admin.
+- [ ] Separar claramente rutas `x-api-key` de rutas `JWT`.
+- [ ] Mejorar analytics admin con filtros por `year`, `month`, `day`, `from`, `to`.
+- [ ] Exponer endpoints admin de listados/tablas para contenido dinámico.
+- [ ] Refinar Swagger para reflejar `ApiKeyAuth` y `BearerAuth`.
 
 ### Frontend `My-Portfolio`
 
 - [x] Auditados los bloques hardcodeados.
 - [x] Detectados los orígenes de contenido a migrar.
-- [x] Servicio HTTP inicial para `projects`.
-- [x] Reemplazo del hardcode del slider de proyectos.
-- [x] Servicio HTTP para `profile`, `techSkills`, `experience`, `socialLinks` y `testimonials`.
-- [x] Reemplazo del hardcode en `home banner`, `about`, `skills`, `experience`, `socialLinks` y `testimonials` con fallback local.
-- [x] Refactor de `projects` y `content` para consumir DTOs directos del backend sin mapeos intermedios en servicios.
-- [x] Interfaces movidas a `src/app/core/interfaces/<modulo>/...`.
-- [x] Eliminados los archivos `shared/Json/*` usados como fallback de contenido dinámico.
-- [x] `x-api-key` agregado globalmente desde frontend para mutaciones HTTP.
-- [x] Rutas de `contact` y `verify-captcha` alineadas entre frontend y backend.
-- [ ] Servicio HTTP para `resumes`.
-- [ ] Reemplazo del hardcode restante en CVs y detalles.
-- [ ] `projectDetails` terminado.
-- [ ] Dashboard oculto.
+- [x] Servicios HTTP para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `testimonials` y `resumes`.
+- [x] Reemplazo del hardcode del home público por consumo real de API.
+- [x] `x-api-key` agregado globalmente para mutaciones HTTP.
+- [x] Rutas de `contact` y `verify-captcha` alineadas con backend.
+- [x] CVs descargando desde datos devueltos por API.
+- [ ] Ajustar `projectDetails` y detalles visuales restantes.
+- [ ] Agregar acceso oculto al dashboard en header desktop.
+- [ ] Agregar acceso oculto al dashboard en menú mobile.
+- [ ] Crear vista `admin-login`.
+- [ ] Rehacer `admin-dashboard` con auth JWT y sin acceso directo a storage en SSR.
+- [ ] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks`, `adminUsers`.
+- [ ] Crear formularios admin para CRUD de todos los módulos dinámicos.
 
-## Hardcode detectado y pendiente de migración
+## Hallazgos importantes
 
-- textos auxiliares de UI e i18n en `src/app/core/services/i18n/i18n.service.ts`
+- El dashboard actual del frontend usa `sessionStorage` directo y no sirve como diseño final.
+- El backend actual solo tiene un login admin placeholder por `ADMIN_API_KEY`; debe eliminarse como contrato final.
+- `GET /api/analytics/dashboard` hoy solo devuelve agregados simples; falta la capa admin real con filtros.
+- El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
 
 ## Comandos validados
 
@@ -91,24 +100,25 @@ node dist/index.js
 
 - `GET /health` responde `200`.
 - El backend compila en TypeScript.
-- Swagger se genera correctamente.
-- El endpoint `POST /api/admin/seed-initial` quedó creado y documentado.
-- El frontend Angular compila tras migrar `projects`, `home banner`, `about`, `skills`, `experience`, `socialLinks` y `testimonials`.
-- `projectDetails` ahora consulta `/api/projects/:idOrSlug` sin fallback local.
+- Swagger abre y persiste `x-api-key`.
+- El endpoint `POST /api/admin/seed-initial` existe.
+- El frontend Angular compila tras migrar el contenido dinámico público.
 
-## Observaciones actuales
+## Próxima fase en curso
 
-- El slider de proyectos ya consulta la API sin fallback local.
-- `profile`, `heroSlides`, `techSkills`, `experience`, `socialLinks` y `testimonials` ya consultan API sin fallback local.
-- Los servicios de `projects` y `content` ya no hacen shaping de respuesta; los componentes públicos leen DTOs backend de forma directa.
-- El build de Angular sigue pasando, pero el prerender registra `404` contra `https://mailer-pf.vercel.app/api/*` porque el backend desplegado aún no expone esas rutas nuevas.
-- `vercel.json` anterior apuntaba a un `index.js` inexistente; se corrigió a `api/index.ts`, pero hace falta redeploy para que Vercel publique esta versión.
-- Quedan warnings de CSS legacy en el build de Angular; no son bloqueantes y no vienen de esta migración.
-- `swagger-autogen` sigue mostrando varios paths relativos sin prefijo montado de Express. Para el seed, la ruta real es `POST /api/admin/seed-initial`, aunque Swagger UI pueda mostrar `/seed-initial`.
-- Se agregó postproceso del `swagger-output.json` para corregir los prefijos de rutas y evitar llamadas erróneas desde Swagger UI.
+### Fase admin/auth
 
-## Siguiente paso recomendado
+- [x] Documentación corregida al nuevo criterio
+- [x] Dependencias/env para JWT
+- [x] Modelo y repositorio `admin_users`
+- [x] Endpoints `create admin user`, `login`, `me`
+- [x] Middleware Bearer
+- [ ] Header oculto desktop/mobile
+- [ ] Login admin SSR-safe
 
-1. Ejecutar seed inicial del contenido.
-2. Conectar Angular a `/api/projects` y `/api/content/*`.
-3. Retirar el hardcode progresivamente.
+### Fase dashboard
+
+- [ ] Métricas con filtros por rango
+- [ ] Tablas admin por módulo
+- [ ] Formularios CRUD por módulo
+- [ ] Integración Angular con token Bearer

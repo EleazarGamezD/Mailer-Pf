@@ -65,3 +65,13 @@ export interface AnalyticsEventDocument extends Document {
   meta: Record<string, unknown>;
   createdAt: Date;
 }
+
+export interface AdminUserDocument extends BaseEntity {
+  email: string;
+  username: string;
+  displayName: string;
+  passwordHash: string;
+  role: 'super_admin' | 'admin' | 'editor';
+  active: boolean;
+  lastLoginAt: Date | null;
+}
