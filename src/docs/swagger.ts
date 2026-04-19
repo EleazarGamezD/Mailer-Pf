@@ -1,14 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import url from 'url';
 import swaggerAutogen from 'swagger-autogen';
+import url from 'url';
 
 import { env } from '../config/env.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const outputFile = path.join(__dirname, 'swagger-output.json');
-const endpointsFiles = [path.join(__dirname, '..', 'routes', 'index.ts')];
+const endpointsFiles = [
+  path.join(__dirname, '..', 'routes', 'projects.routes.ts'),
+  path.join(__dirname, '..', 'routes', 'contact.routes.ts'),
+  path.join(__dirname, '..', 'routes', 'analytics.routes.ts'),
+  path.join(__dirname, '..', 'routes', 'admin.routes.ts'),
+  path.join(__dirname, '..', 'routes', 'content.routes.ts'),
+];
 
 const doc = {
   info: {
