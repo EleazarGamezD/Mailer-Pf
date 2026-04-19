@@ -44,6 +44,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] TypeScript configurado.
 - [x] `dist/` tratado como artefacto compilado.
 - [x] `.env.example` actualizado.
+- [x] Entrada serverless de Vercel corregida para servir la app Express actual.
 - [x] Swagger generado desde código.
 - [x] Swagger normalizado para exponer rutas montadas reales bajo `/api/*`.
 - [x] Swagger configurado para persistir `x-api-key` en la UI.
@@ -65,6 +66,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Refactor de `projects` y `content` para consumir DTOs directos del backend sin mapeos intermedios en servicios.
 - [x] Interfaces movidas a `src/app/core/interfaces/<modulo>/...`.
 - [x] Eliminados los archivos `shared/Json/*` usados como fallback de contenido dinámico.
+- [x] `x-api-key` agregado globalmente desde frontend para mutaciones HTTP.
+- [x] Rutas de `contact` y `verify-captcha` alineadas entre frontend y backend.
 - [ ] Servicio HTTP para `resumes`.
 - [ ] Reemplazo del hardcode restante en CVs y detalles.
 - [ ] `projectDetails` terminado.
@@ -99,6 +102,7 @@ node dist/index.js
 - `profile`, `heroSlides`, `techSkills`, `experience`, `socialLinks` y `testimonials` ya consultan API sin fallback local.
 - Los servicios de `projects` y `content` ya no hacen shaping de respuesta; los componentes públicos leen DTOs backend de forma directa.
 - El build de Angular sigue pasando, pero el prerender registra `404` contra `https://mailer-pf.vercel.app/api/*` porque el backend desplegado aún no expone esas rutas nuevas.
+- `vercel.json` anterior apuntaba a un `index.js` inexistente; se corrigió a `api/index.ts`, pero hace falta redeploy para que Vercel publique esta versión.
 - Quedan warnings de CSS legacy en el build de Angular; no son bloqueantes y no vienen de esta migración.
 - `swagger-autogen` sigue mostrando varios paths relativos sin prefijo montado de Express. Para el seed, la ruta real es `POST /api/admin/seed-initial`, aunque Swagger UI pueda mostrar `/seed-initial`.
 - Se agregó postproceso del `swagger-output.json` para corregir los prefijos de rutas y evitar llamadas erróneas desde Swagger UI.
