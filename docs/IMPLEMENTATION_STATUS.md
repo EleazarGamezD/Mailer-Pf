@@ -24,9 +24,10 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Crear script de seed inicial del contenido hardcodeado.
 - [x] Exponer endpoint admin para ejecutar el seed inicial.
 - [ ] Sembrar Mongo con el contenido inicial hardcodeado.
-- [ ] Conectar Angular al backend para dejar de usar JSON local.
+- [x] Conectar Angular al backend para dejar de usar JSON local de forma progresiva.
 - [x] Iniciar migración del frontend en el bloque de `projects` del home.
-- [ ] Migrar `about`, `skills`, `experience`, `socialLinks`, `projects`, `testimonials`, `resumes` a consumo real desde API.
+- [x] Migrar `about`, `skills`, `experience`, `socialLinks`, `projects` y `testimonials` a consumo real desde API.
+- [ ] Migrar `resumes` a consumo real desde API.
 - [ ] Terminar detalle de proyecto por id/slug.
 - [ ] Terminar bloque CV dinámico.
 - [ ] Terminar tarjetas dinámicas de proyectos.
@@ -59,21 +60,19 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Detectados los orígenes de contenido a migrar.
 - [x] Servicio HTTP inicial para `projects`.
 - [x] Reemplazo del hardcode del slider de proyectos.
-- [ ] Servicios HTTP para `profile`, `techSkills`, `experience`, `socialLinks`, `testimonials`, `resumes`.
-- [ ] Reemplazo del hardcode en los demás componentes.
+- [x] Servicio HTTP para `profile`, `techSkills`, `experience`, `socialLinks` y `testimonials`.
+- [x] Reemplazo del hardcode en `home banner`, `about`, `skills`, `experience`, `socialLinks` y `testimonials` con fallback local.
+- [x] Refactor de `projects` y `content` para consumir DTOs directos del backend sin mapeos intermedios en servicios.
+- [x] Interfaces movidas a `src/app/core/interfaces/<modulo>/...`.
+- [x] Eliminados los archivos `shared/Json/*` usados como fallback de contenido dinámico.
+- [ ] Servicio HTTP para `resumes`.
+- [ ] Reemplazo del hardcode restante en CVs y detalles.
 - [ ] `projectDetails` terminado.
 - [ ] Dashboard oculto.
 
 ## Hardcode detectado y pendiente de migración
 
-- `src/app/shared/Json/projects.ts`
-- `src/app/shared/Json/techStack.ts`
-- `src/app/shared/Json/carrerPath.ts`
-- `src/app/shared/Json/workReferences.ts`
-- `src/app/shared/Json/homeBanner.ts`
-- `src/app/shared/Components/header/header.component.ts`
-- `src/app/shared/Components/footer/footer.component.html`
-- textos de `about` actualmente en `src/app/core/services/i18n/i18n.service.ts`
+- textos auxiliares de UI e i18n en `src/app/core/services/i18n/i18n.service.ts`
 
 ## Comandos validados
 
@@ -91,12 +90,15 @@ node dist/index.js
 - El backend compila en TypeScript.
 - Swagger se genera correctamente.
 - El endpoint `POST /api/admin/seed-initial` quedó creado y documentado.
-- El frontend Angular compila tras migrar el slider de proyectos.
+- El frontend Angular compila tras migrar `projects`, `home banner`, `about`, `skills`, `experience`, `socialLinks` y `testimonials`.
+- `projectDetails` ahora consulta `/api/projects/:idOrSlug` sin fallback local.
 
 ## Observaciones actuales
 
-- El slider de proyectos ya consulta la API en browser.
-- En SSR/prerender se dejó desactivada la llamada para evitar fallos mientras el backend productivo viejo siga sin desplegar `/api/projects`.
+- El slider de proyectos ya consulta la API sin fallback local.
+- `profile`, `heroSlides`, `techSkills`, `experience`, `socialLinks` y `testimonials` ya consultan API sin fallback local.
+- Los servicios de `projects` y `content` ya no hacen shaping de respuesta; los componentes públicos leen DTOs backend de forma directa.
+- El build de Angular sigue pasando, pero el prerender registra `404` contra `https://mailer-pf.vercel.app/api/*` porque el backend desplegado aún no expone esas rutas nuevas.
 - Quedan warnings de CSS legacy en el build de Angular; no son bloqueantes y no vienen de esta migración.
 - `swagger-autogen` sigue mostrando varios paths relativos sin prefijo montado de Express. Para el seed, la ruta real es `POST /api/admin/seed-initial`, aunque Swagger UI pueda mostrar `/seed-initial`.
 - Se agregó postproceso del `swagger-output.json` para corregir los prefijos de rutas y evitar llamadas erróneas desde Swagger UI.
