@@ -9,6 +9,9 @@ Se modularizó el backend para soportar el portfolio dinámico. La base ya tiene
 - middleware de `x-api-key`
 - Swagger en `/docs`
 - rutas para proyectos, contenido general, analytics, contacto y admin
+- migración a TypeScript completada
+- compatibilidad de mail templates ajustada para Node 20+
+- verificación real de `GET /health`
 
 ## Qué falta después de esta fase
 
@@ -39,3 +42,7 @@ Se modularizó el backend para soportar el portfolio dinámico. La base ya tiene
 ## Nota crítica
 
 La credencial de MongoDB usada para el cluster debe rotarse antes de despliegue porque ya fue expuesta fuera del `.env`.
+
+## Punto de control para otra IA
+
+Leer primero `docs/IMPLEMENTATION_STATUS.md`. Ese archivo tiene el checklist vivo con lo que ya se hizo y lo que sigue.

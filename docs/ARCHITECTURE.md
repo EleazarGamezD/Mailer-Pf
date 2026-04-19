@@ -68,6 +68,13 @@ Convertir `Mailer-Pf` en la API principal del portfolio para que el frontend Ang
 - `GET /api/analytics/dashboard`
 - `POST /api/admin/login`
 
+## Estado de implementación
+
+- La base backend ya está operativa y compilando en TypeScript.
+- `GET /health` fue validado con respuesta `200`.
+- La documentación Swagger se genera con `npm run docs:generate`.
+- Aún falta poblar Mongo con el contenido inicial hardcodeado del frontend.
+
 ## Siguiente integración con frontend
 
 1. Crear rutas y servicios Angular para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `resumes`, `testimonials`.

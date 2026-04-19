@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "docs:generate": "tsx src/docs/swagger.ts",
+    "seed:initial": "tsx src/scripts/seed-initial-content.ts",
     "start": "npm run build && node dist/index.js",
     "dev": "tsx watch src/index.ts"
   },
