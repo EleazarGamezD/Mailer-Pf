@@ -56,7 +56,30 @@ function addPath(
     target[fullPath] = {};
   }
 
-  target[fullPath][method] = operation;
+  target[fullPath][method] = applyDynamicTag(fullPath, operation);
+}
+
+function formatResourceTag(resourceName: string) {
+  return resourceName
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function applyDynamicTag(routePath: string, operation: Record<string, unknown>) {
+  if (!routePath.startsWith('/api/content/')) {
+    return operation;
+  }
+
+  const resourceName = routePath.split('/')[3];
+  if (!resourceName || resourceName.startsWith('{')) {
+    return operation;
+  }
+
+  return {
+    ...operation,
+    tags: [formatResourceTag(resourceName)],
+  };
 }
 
 function normalizeServerUrl(rawUrl: string) {
