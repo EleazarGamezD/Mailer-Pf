@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getSingleParam } from '../utils/request-param.js';
 import {
@@ -23,6 +24,7 @@ contentRouter.get(
 
 contentRouter.put(
   '/profile',
+  requireApiKey,
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Content']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
@@ -43,6 +45,7 @@ for (const resourceName of resourceNames) {
 
   contentRouter.post(
     `/${resourceName}`,
+    requireApiKey,
     asyncHandler(async (req, res) => {
       // #swagger.tags = ['Content']
       // #swagger.security = [{ "ApiKeyAuth": [] }]
@@ -52,6 +55,7 @@ for (const resourceName of resourceNames) {
 
   contentRouter.patch(
     `/${resourceName}/:id`,
+    requireApiKey,
     asyncHandler(async (req, res) => {
       // #swagger.tags = ['Content']
       // #swagger.security = [{ "ApiKeyAuth": [] }]
@@ -67,6 +71,7 @@ for (const resourceName of resourceNames) {
 
   contentRouter.delete(
     `/${resourceName}/:id`,
+    requireApiKey,
     asyncHandler(async (req, res) => {
       // #swagger.tags = ['Content']
       // #swagger.security = [{ "ApiKeyAuth": [] }]

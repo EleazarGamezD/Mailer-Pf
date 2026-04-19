@@ -1,6 +1,5 @@
 import { Router } from 'express';
 
-import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { adminRouter } from './admin.routes.js';
 import { analyticsRouter } from './analytics.routes.js';
 import { contactRouter } from './contact.routes.js';
@@ -12,5 +11,5 @@ export const apiRoutes = Router();
 apiRoutes.use('/contact', contactRouter);
 apiRoutes.use('/analytics', analyticsRouter);
 apiRoutes.use('/admin', adminRouter);
-apiRoutes.use('/projects', requireApiKey, projectsRouter);
-apiRoutes.use('/content', requireApiKey, contentRouter);
+apiRoutes.use('/projects', projectsRouter);
+apiRoutes.use('/content', contentRouter);

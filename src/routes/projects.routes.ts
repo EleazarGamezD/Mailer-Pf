@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getSingleParam } from '../utils/request-param.js';
 import {
@@ -30,6 +31,7 @@ projectsRouter.get(
 
 projectsRouter.post(
   '/',
+  requireApiKey,
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Projects']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
@@ -39,6 +41,7 @@ projectsRouter.post(
 
 projectsRouter.patch(
   '/:id',
+  requireApiKey,
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Projects']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
@@ -48,6 +51,7 @@ projectsRouter.patch(
 
 projectsRouter.delete(
   '/:id',
+  requireApiKey,
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Projects']
     // #swagger.security = [{ "ApiKeyAuth": [] }]

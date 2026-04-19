@@ -47,7 +47,16 @@ export function createApp() {
     });
   });
 
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
+  app.use(
+    '/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+      explorer: true,
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    }),
+  );
   app.use('/api', apiRoutes);
 
   app.use(notFoundHandler);

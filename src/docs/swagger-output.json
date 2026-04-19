@@ -7,11 +7,11 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000/api/"
+      "url": "http://localhost:3000"
     }
   ],
   "paths": {
-    "/": {
+    "/api/projects": {
       "get": {
         "tags": [
           "Projects"
@@ -43,7 +43,7 @@
         ]
       }
     },
-    "/{idOrSlug}": {
+    "/api/projects/{idOrSlug}": {
       "get": {
         "tags": [
           "Projects"
@@ -66,7 +66,7 @@
         }
       }
     },
-    "/{id}": {
+    "/api/projects/{id}": {
       "patch": {
         "tags": [
           "Projects"
@@ -120,7 +120,7 @@
         ]
       }
     },
-    "/send": {
+    "/api/contact/send": {
       "post": {
         "tags": [
           "Contact"
@@ -133,7 +133,7 @@
         }
       }
     },
-    "/verify-captcha": {
+    "/api/contact/verify-captcha": {
       "post": {
         "tags": [
           "Contact"
@@ -146,7 +146,7 @@
         }
       }
     },
-    "/event": {
+    "/api/analytics/event": {
       "post": {
         "tags": [
           "Analytics"
@@ -159,7 +159,7 @@
         }
       }
     },
-    "/dashboard": {
+    "/api/analytics/dashboard": {
       "get": {
         "tags": [
           "Analytics"
@@ -175,7 +175,7 @@
         }
       }
     },
-    "/login": {
+    "/api/admin/login": {
       "post": {
         "tags": [
           "Admin"
@@ -202,7 +202,7 @@
         }
       }
     },
-    "/seed-initial": {
+    "/api/admin/seed-initial": {
       "post": {
         "tags": [
           "Admin"
@@ -235,7 +235,7 @@
         }
       }
     },
-    "/profile": {
+    "/api/content/profile": {
       "get": {
         "tags": [
           "Content"
@@ -264,7 +264,7 @@
         ]
       }
     },
-    "/${resourceName}": {
+    "/api/content/techSkills": {
       "get": {
         "tags": [
           "Content"
@@ -316,7 +316,495 @@
         ]
       }
     },
-    "/${resourceName}/{id}": {
+    "/api/content/experience": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/socialLinks": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/resumes": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/testimonials": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/techSkills/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/experience/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/socialLinks/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/resumes/{id}": {
+      "patch": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Content"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "resourceName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/content/testimonials/{id}": {
       "patch": {
         "tags": [
           "Content"

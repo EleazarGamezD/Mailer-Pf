@@ -44,6 +44,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] `dist/` tratado como artefacto compilado.
 - [x] `.env.example` actualizado.
 - [x] Swagger generado desde código.
+- [x] Swagger normalizado para exponer rutas montadas reales bajo `/api/*`.
+- [x] Swagger configurado para persistir `x-api-key` en la UI.
 - [x] Repositorios y servicios modularizados.
 - [x] Endpoints CRUD iniciales listos.
 - [x] Endpoint admin `POST /api/admin/seed-initial` agregado para correr el seed sin CLI.
@@ -97,6 +99,7 @@ node dist/index.js
 - En SSR/prerender se dejó desactivada la llamada para evitar fallos mientras el backend productivo viejo siga sin desplegar `/api/projects`.
 - Quedan warnings de CSS legacy en el build de Angular; no son bloqueantes y no vienen de esta migración.
 - `swagger-autogen` sigue mostrando varios paths relativos sin prefijo montado de Express. Para el seed, la ruta real es `POST /api/admin/seed-initial`, aunque Swagger UI pueda mostrar `/seed-initial`.
+- Se agregó postproceso del `swagger-output.json` para corregir los prefijos de rutas y evitar llamadas erróneas desde Swagger UI.
 
 ## Siguiente paso recomendado
 
