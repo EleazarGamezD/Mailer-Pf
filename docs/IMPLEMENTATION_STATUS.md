@@ -22,6 +22,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Documentar arquitectura y continuidad.
 - [x] Documentar un tablero persistente de progreso para continuidad entre IAs.
 - [x] Crear script de seed inicial del contenido hardcodeado.
+- [x] Exponer endpoint admin para ejecutar el seed inicial.
 - [ ] Sembrar Mongo con el contenido inicial hardcodeado.
 - [ ] Conectar Angular al backend para dejar de usar JSON local.
 - [x] Iniciar migración del frontend en el bloque de `projects` del home.
@@ -45,6 +46,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Swagger generado desde código.
 - [x] Repositorios y servicios modularizados.
 - [x] Endpoints CRUD iniciales listos.
+- [x] Endpoint admin `POST /api/admin/seed-initial` agregado para correr el seed sin CLI.
 - [ ] Seed inicial ejecutado en Mongo.
 - [ ] Validaciones fuertes por payload.
 - [ ] Dashboard metrics agregadas avanzadas.
@@ -77,6 +79,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 npm install
 npm run build
 npm run docs:generate
+npm run seed:initial
 node dist/index.js
 ```
 
@@ -85,6 +88,7 @@ node dist/index.js
 - `GET /health` responde `200`.
 - El backend compila en TypeScript.
 - Swagger se genera correctamente.
+- El endpoint `POST /api/admin/seed-initial` quedó creado y documentado.
 - El frontend Angular compila tras migrar el slider de proyectos.
 
 ## Observaciones actuales
@@ -92,6 +96,7 @@ node dist/index.js
 - El slider de proyectos ya consulta la API en browser.
 - En SSR/prerender se dejó desactivada la llamada para evitar fallos mientras el backend productivo viejo siga sin desplegar `/api/projects`.
 - Quedan warnings de CSS legacy en el build de Angular; no son bloqueantes y no vienen de esta migración.
+- `swagger-autogen` sigue mostrando varios paths relativos sin prefijo montado de Express. Para el seed, la ruta real es `POST /api/admin/seed-initial`, aunque Swagger UI pueda mostrar `/seed-initial`.
 
 ## Siguiente paso recomendado
 
