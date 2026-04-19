@@ -28,7 +28,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Mover interfaces a `src/app/core/interfaces/<modulo>/...`.
 - [x] Eliminar mapeos intermedios en `projects` y `content` services.
 - [ ] Ejecutar seed inicial en el ambiente que se vaya a usar.
-- [ ] Terminar detalle de proyecto por `id/slug`.
+- [x] Terminar detalle de proyecto por `id/slug`.
 - [ ] Terminar diseño final de tarjetas dinámicas de proyectos.
 - [ ] Crear util frontend para compresión WebP + base64.
 - [ ] Implementar tracking más completo de interacciones.
@@ -71,7 +71,10 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] `x-api-key` agregado globalmente para mutaciones HTTP.
 - [x] Rutas de `contact` y `verify-captcha` alineadas con backend.
 - [x] CVs descargando desde datos devueltos por API.
-- [ ] Ajustar `projectDetails` y detalles visuales restantes.
+- [x] Ajustar `projectDetails` con layout más rico y galería.
+- [x] Enviar `phone` del contacto de frontend a backend.
+- [x] Maquetar correos de contacto con templates reales de portfolio.
+- [ ] Ajustar detalles visuales restantes del home público.
 - [ ] Agregar acceso oculto al dashboard en header desktop.
 - [ ] Agregar acceso oculto al dashboard en menú mobile.
 - [ ] Crear vista `admin-login`.
@@ -85,6 +88,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - El backend actual solo tiene un login admin placeholder por `ADMIN_API_KEY`; debe eliminarse como contrato final.
 - `GET /api/analytics/dashboard` hoy solo devuelve agregados simples; falta la capa admin real con filtros.
 - El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
+- El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
 
 ## Comandos validados
 
@@ -103,6 +107,8 @@ node dist/index.js
 - Swagger abre y persiste `x-api-key`.
 - El endpoint `POST /api/admin/seed-initial` existe.
 - El frontend Angular compila tras migrar el contenido dinámico público.
+- El detalle de proyecto ya renderiza media, chips tecnológicos, CTAs y galería desde DTO real.
+- El flujo de contacto ya envía `phone` de extremo a extremo y usa plantillas de correo propias.
 
 ## Próxima fase en curso
 

@@ -71,9 +71,10 @@ export async function sendContactEmail(payload: Record<string, unknown>) {
   const message = typeof payload.message === 'string' ? payload.message : '';
   const contactEmail = typeof payload.contactEmail === 'string' ? payload.contactEmail : '';
   const name = typeof payload.name === 'string' ? payload.name : '';
+  const phone = typeof payload.phone === 'string' ? payload.phone : '';
 
-  if (!subject || !message || !contactEmail || !name) {
-    throw createHttpError(400, 'subject, message, contactEmail and name are required.');
+  if (!subject || !message || !contactEmail || !name || !phone) {
+    throw createHttpError(400, 'subject, message, contactEmail, name and phone are required.');
   }
 
   const activeTransporter = getTransporter();
@@ -88,6 +89,8 @@ export async function sendContactEmail(payload: Record<string, unknown>) {
       subject,
       message,
       contactEmail,
+      name,
+      phone,
       year: new Date().getFullYear(),
     },
     attachments,
@@ -100,6 +103,7 @@ export async function sendContactEmail(payload: Record<string, unknown>) {
     template: 'emailResponse',
     context: {
       name,
+      subject,
       year: new Date().getFullYear(),
     },
     attachments,
