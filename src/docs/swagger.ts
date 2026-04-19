@@ -7,13 +7,14 @@ import { env } from '../config/env.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const outputFile = path.join(__dirname, 'swagger-output.json');
+const projectRoot = path.join(__dirname, '..', '..');
+const outputFile = path.join(projectRoot, 'dist', 'docs', 'swagger-output.json');
 const endpointsFiles = [
-  path.join(__dirname, '..', 'routes', 'projects.routes.ts'),
-  path.join(__dirname, '..', 'routes', 'contact.routes.ts'),
-  path.join(__dirname, '..', 'routes', 'analytics.routes.ts'),
-  path.join(__dirname, '..', 'routes', 'admin.routes.ts'),
-  path.join(__dirname, '..', 'routes', 'content.routes.ts'),
+  path.join(projectRoot, 'dist', 'routes', 'projects.routes.js'),
+  path.join(projectRoot, 'dist', 'routes', 'contact.routes.js'),
+  path.join(projectRoot, 'dist', 'routes', 'analytics.routes.js'),
+  path.join(projectRoot, 'dist', 'routes', 'admin.routes.js'),
+  path.join(projectRoot, 'dist', 'routes', 'content.routes.js'),
 ];
 
 const doc = {

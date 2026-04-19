@@ -153,6 +153,25 @@ export async function seedInitialContent() {
     base64: '',
   }));
 
+  const resumes = [
+    ['eleazar-cv-es', 'Eleazar Gamez - CV Español', 'eleazar-gamez-cv-es.pdf', 'application/pdf'],
+    ['eleazar-cv-en', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-en.pdf', 'application/pdf'],
+  ].map(([slug, title, fileName, mimeType], index) => ({
+    slug,
+    label: { es: title.split('-')[0] + ' - CV Español', en: title.split('-')[0] + ' - CV English' },
+    title: { es: title.split('-')[0] + ' - CV Español', en: title.split('-')[0] + ' - CV English' },
+    description: { es: 'Currículum vitae profesional', en: 'Professional curriculum vitae' },
+    value: fileName,
+    icon: null,
+    href: `/assets/docs/${fileName}`,
+    order: index + 1,
+    active: true,
+    metadata: { language: slug.includes('es') ? 'es' : 'en' },
+    fileName,
+    mimeType,
+    base64: '',
+  }));
+
   const profile = {
     key: 'main-profile',
     slug: 'main-profile',
@@ -218,11 +237,14 @@ export async function seedInitialContent() {
   await db.collection('social_links').deleteMany({});
   await db.collection('social_links').insertMany(socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
+  await db.collection('resumes').deleteMany({});
+  await db.collection('resumes').insertMany(resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+
   await db.collection('profile').deleteMany({ key: 'main-profile' });
   await db.collection('profile').insertOne({ ...profile, createdAt: now, updatedAt: now });
 
   return {
     seeded: true,
-    collections: ['projects', 'tech_skills', 'experience', 'testimonials', 'social_links', 'profile'],
+    collections: ['projects', 'tech_skills', 'experience', 'testimonials', 'social_links', 'resumes', 'profile'],
   };
 }
