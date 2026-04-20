@@ -26,6 +26,9 @@
   - shell CoreUI ya montado con sidebar/header/footer y páginas hijas reales por sección
   - el dashboard monolítico anterior ya fue eliminado del frontend
   - utilidad frontend reservada para imágenes `base64/webp` orientadas a persistencia en Mongo
+  - `My-Portfolio` ya quedó alineado a Angular 21 y al builder moderno (`@angular/build`) igual que la referencia `BookingAgency_Frontend_V2`
+  - SSR/prerender ya fue ajustado al API nueva (`provideServerRendering(withRoutes(...))` y `BootstrapContext` en `main.server.ts`)
+  - la deuda técnica inmediata de compatibilidad quedó concentrada en `ng-recaptcha`
 
 ## Cambio de criterio ya aprobado por el usuario
 
@@ -51,6 +54,7 @@ La zona admin debe quedar así:
 
 1. Frontend admin
 - terminar la migración del dashboard al lenguaje visual CoreUI a nivel de tablas, cards, formularios y navegación
+- reemplazar o encapsular `ng-recaptcha` para eliminar la única dependencia que sigue fuera de la línea Angular 21
 - conectar `projects` y luego `profile.heroSlides` al nuevo contrato de imágenes embebidas
 
 2. Backend

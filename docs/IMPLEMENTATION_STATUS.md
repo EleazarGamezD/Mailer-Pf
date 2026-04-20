@@ -83,6 +83,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y `adminUsers`.
 - [x] Crear formularios admin para CRUD de `projects`, `profile`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y gestión base de `adminUsers`.
 - [x] Montar layout admin CoreUI con sidebar/header y navegación por secciones.
+- [x] Alinear `My-Portfolio` a Angular 21 y al builder moderno usado por `BookingAgency_Frontend_V2`.
 
 ## Hallazgos importantes
 
@@ -93,6 +94,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - La migración visual del admin cambió de criterio: la UI pública sigue igual y solo el admin debe converger al dashboard CoreUI.
 - Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, pero aún no está conectada a los formularios de `projects` y `profile`.
 - El dashboard admin viejo fue eliminado y reemplazado por páginas hijas reales bajo el shell CoreUI con un facade compartido.
+- `My-Portfolio` ya corre sobre Angular 21 + `@angular/build` + SSR/prerender actualizado; `main.server.ts` y `app.config.server.ts` se adaptaron al contrato nuevo (`BootstrapContext`, `provideServerRendering(withRoutes(...))`).
+- La única dependencia todavía fuera de línea respecto a Angular 21 es `ng-recaptcha`, que sigue funcionando en build con instalación flexible pero conviene reemplazar o aislar en una iteración posterior.
 
 ## Comandos validados
 
@@ -141,6 +144,7 @@ node dist/index.js
 - [x] Mejorar edición avanzada de proyectos e imágenes
 - [x] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
 - [x] Reemplazar el shell del admin por layout CoreUI y mover la navegación a rutas reales por sección
+- [x] Subir la base del frontend a Angular 21 para converger con `BookingAgency_Frontend_V2`
 
 Estado actual de esa división:
 - [x] `overview`
