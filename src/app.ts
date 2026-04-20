@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import path from 'path';
 import url from 'url';
 import swaggerUi from 'swagger-ui-express';
-
 import { env } from './config/env.js';
 import { readSwaggerDocument } from './docs/swagger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
