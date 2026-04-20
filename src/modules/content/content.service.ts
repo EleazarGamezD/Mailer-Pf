@@ -7,6 +7,7 @@ import {
   getLocalizedField,
   resolveEnglishContent,
 } from '../../utils/content.helpers.js';
+import { fileService } from '../files/file.service.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
 const collectionMap = {
@@ -68,10 +69,11 @@ export async function getProfile() {
 
 export async function upsertProfile(payload: Record<string, unknown>) {
   const existing = await profileRepository.findOne({ key: 'main-profile' });
-  const metadata =
+  const rawMetadata =
     payload.metadata && typeof payload.metadata === 'object'
       ? (payload.metadata as Record<string, unknown>)
       : existing?.metadata || {};
+  const metadata = fileService.normalizeProfileMetadata(rawMetadata);
 
   const base = {
     key: 'main-profile',

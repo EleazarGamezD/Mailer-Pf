@@ -20,12 +20,13 @@
   - métricas admin con filtros por `year`, `month`, `day`, `from`, `to`
   - CRUD visible para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`
   - tabla admin para `adminUsers` con edición base de nombre, rol y estado
-  - edición de `projects` con `coverImage` y galería por URL
+  - edición de `projects` ya no debe quedarse en tabla inline; el criterio aprobado es listado + formulario separado por ruta
   - `resumes` con creación y reemplazo de archivo vía `base64`
   - dashboard ya dividido en subcomponentes standalone por sección
   - shell CoreUI ya montado con sidebar/header/footer y páginas hijas reales por sección
   - el dashboard monolítico anterior ya fue eliminado del frontend
   - utilidad frontend reservada para imágenes `base64/webp` orientadas a persistencia en Mongo
+  - el backend ya debe consolidarse alrededor de un file service global para normalizar imágenes hacia MongoDB en vez de bucket externo
   - `My-Portfolio` ya quedó alineado a Angular 21 y al builder moderno (`@angular/build`) igual que la referencia `BookingAgency_Frontend_V2`
   - SSR/prerender ya fue ajustado al API nueva (`provideServerRendering(withRoutes(...))` y `BootstrapContext` en `main.server.ts`)
   - la deuda técnica inmediata de compatibilidad quedó concentrada en `ng-recaptcha`
@@ -44,6 +45,9 @@ La zona admin debe quedar así:
 - métricas con filtros por año, mes, día y rangos libres
 - listados admin en formato tabla
 - pantallas de creación/edición para todo el contenido dinámico
+- maquetación basada en los componentes reales de `BookingAgency_Frontend_V2/src/app/ui`
+- acciones por fila desde un menú contextual con iconografía tipo Booking
+- formularios separados del listado para create/edit, empezando por `projects`
 
 ## Qué no hacer
 
@@ -55,15 +59,17 @@ La zona admin debe quedar así:
 ## Próximos pasos recomendados
 
 1. Frontend admin
-- terminar la migración del dashboard al lenguaje visual CoreUI a nivel de tablas, cards, formularios y navegación
+- terminar la migración del dashboard tomando como referencia `BookingAgency_Frontend_V2/src/app/ui` y no `template`
+- convertir cada módulo admin al patrón `list route + create route + edit route`
+- mover `projects` por completo al flujo Booking-style y luego replicar el patrón en `content`, `profile`, `resumes` y `users`
 - reemplazar o encapsular `ng-recaptcha` para eliminar la única dependencia que sigue fuera de la línea Angular 21
-- conectar `projects` y luego `profile.heroSlides` al nuevo contrato de imágenes embebidas
+- conectar `projects` y `profile.heroSlides` al nuevo contrato de imágenes embebidas y al uploader reutilizable inspirado en Booking
 
 2. Backend
 - separar con más claridad rutas `x-api-key` de rutas `Bearer`
 - refinar Swagger para reflejar `ApiKeyAuth` y `BearerAuth`
 - evaluar endpoints específicos de admin users si el frontend va a administrarlos
-- definir contrato final para `coverImage`, `images` y otros assets como objetos persistidos en Mongo
+- consolidar un file service global para cualquier imagen del CMS y persistir assets como objetos Mongo normalizados
 
 3. Despliegue
 - redeployar `Mailer-Pf` en Vercel para alinear el prerender del frontend con el backend real
@@ -90,3 +96,4 @@ La zona admin debe quedar así:
 
 - La credencial de MongoDB compartida en la conversación debe rotarse antes de despliegue.
 - Si Swagger vuelve a mostrar rutas montadas incorrectas, hay que preferir spec controlada antes que fallback visual engañoso.
+- Si una futura migración del dashboard vuelve a mirar `template` como referencia principal, se estaría retomando desde el criterio equivocado: la fuente válida para UX admin es `BookingAgency_Frontend_V2/src/app/ui`.

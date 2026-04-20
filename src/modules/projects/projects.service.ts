@@ -7,6 +7,7 @@ import {
   getLocalizedField,
   resolveEnglishContent,
 } from '../../utils/content.helpers.js';
+import { fileService } from '../files/file.service.js';
 import { ProjectsRepository } from './projects.repository.js';
 
 const projectsRepository = new ProjectsRepository();
@@ -29,8 +30,8 @@ function normalizeProjectPayload(payload: Record<string, unknown>): Omit<Project
     summary,
     description,
     stack: Array.isArray(payload.stack) ? payload.stack.filter((value): value is string => typeof value === 'string') : [],
-    images: Array.isArray(payload.images) ? payload.images : [],
-    coverImage: payload.coverImage ?? null,
+    images: fileService.normalizeImageCollection(payload.images, 'project images'),
+    coverImage: fileService.normalizeImageAsset(payload.coverImage, 'project cover image'),
     projectLink: typeof payload.projectLink === 'string' ? payload.projectLink : '',
     codeLink: typeof payload.codeLink === 'string' ? payload.codeLink : '',
     featured: Boolean(payload.featured),

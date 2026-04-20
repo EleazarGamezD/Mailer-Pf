@@ -30,7 +30,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [ ] Ejecutar seed inicial en el ambiente que se vaya a usar.
 - [x] Terminar detalle de proyecto por `id/slug`.
 - [ ] Terminar diseño final de tarjetas dinámicas de proyectos.
-- [ ] Crear util frontend para compresión WebP + base64.
+- [x] Crear util frontend para compresión WebP + base64.
 - [ ] Implementar tracking más completo de interacciones.
 - [x] Reemplazar autenticación admin provisional por `admin users + JWT`.
 - [x] Crear acceso oculto en header desktop y mobile.
@@ -84,6 +84,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Crear formularios admin para CRUD de `projects`, `profile`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y gestión base de `adminUsers`.
 - [x] Montar layout admin CoreUI con sidebar/header y navegación por secciones.
 - [x] Alinear `My-Portfolio` a Angular 21 y al builder moderno usado por `BookingAgency_Frontend_V2`.
+- [ ] Migrar la UX del dashboard al patrón real de `BookingAgency_Frontend_V2/src/app/ui`.
+- [ ] Separar todos los módulos admin en vistas de listado y formularios create/edit por ruta.
 
 ## Hallazgos importantes
 
@@ -92,7 +94,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
 - El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
 - La migración visual del admin cambió de criterio: la UI pública sigue igual y solo el admin debe converger al dashboard CoreUI.
-- Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, pero aún no está conectada a los formularios de `projects` y `profile`.
+- Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, y la referencia correcta para el dashboard quedó redefinida: la UX debe copiar `src/app/ui`, no `template`.
+- El backend ya necesita consolidar un `file service` global para imágenes persistidas en MongoDB; MinIO/bucket no forma parte del alcance aprobado actual.
 - El dashboard admin viejo fue eliminado y reemplazado por páginas hijas reales bajo el shell CoreUI con un facade compartido.
 - `My-Portfolio` ya corre sobre Angular 21 + `@angular/build` + SSR/prerender actualizado; `main.server.ts` y `app.config.server.ts` se adaptaron al contrato nuevo (`BootstrapContext`, `provideServerRendering(withRoutes(...))`).
 - La única dependencia todavía fuera de línea respecto a Angular 21 es `ng-recaptcha`, que sigue funcionando en build con instalación flexible pero conviene reemplazar o aislar en una iteración posterior.
@@ -120,7 +123,7 @@ node dist/index.js
 - El dashboard admin ya permite CRUD para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`.
 - La sección `resumes` ya soporta alta con archivo y reemplazo de archivo existente mediante `base64`, `fileName` y `mimeType`.
 - El dashboard admin ya incluye tabla de `adminUsers` con edición base de `displayName`, `role` y `active` usando Bearer auth.
-- La sección `projects` ya permite editar `coverImage` y galería (`images`) por URL desde el dashboard admin.
+- `projects` dejó de ser válido como editor inline dentro de la tabla; el criterio actualizado exige listado Booking-style y formulario separado para create/edit.
 - El `admin-dashboard` ya quedó dividido en subcomponentes standalone para `overview`, `projects`, `profile`, `skills`, `experience`, `testimonials`, `resumes`, `socialLinks` y `users`.
 
 ## Próxima fase en curso
@@ -145,6 +148,8 @@ node dist/index.js
 - [x] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
 - [x] Reemplazar el shell del admin por layout CoreUI y mover la navegación a rutas reales por sección
 - [x] Subir la base del frontend a Angular 21 para converger con `BookingAgency_Frontend_V2`
+- [ ] Rehacer `projects` al patrón Booking-style con lista separada, menú de acciones y formulario por ruta
+- [ ] Replicar ese patrón en `content`, `profile`, `resumes` y `users`
 
 Estado actual de esa división:
 - [x] `overview`

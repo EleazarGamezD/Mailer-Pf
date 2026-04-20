@@ -98,9 +98,21 @@ Cada listado deberá permitir al menos:
 
 - ver registros
 - buscar o filtrar
-- abrir edición
+- abrir edición desde menú de acciones contextual
 - eliminar
 - cambiar estado activo/publicado cuando aplique
+
+### Patrón visual y de navegación del dashboard
+
+- La referencia correcta para el dashboard admin es `BookingAgency_Frontend_V2/src/app/ui`, no `template`.
+- `template` solo sirve como fuente de formatos de ejemplo y documentación visual de CoreUI.
+- Los módulos admin del portfolio deben seguir el patrón real de Booking:
+  - una vista de listado por módulo
+  - una vista de formulario separada para crear
+  - una vista de formulario separada para editar
+  - acciones por fila desde menú contextual con iconografía, no botones inline de edición masiva dentro de la tabla
+- El primer módulo a usar como patrón operativo es `projects`, y luego ese mismo flujo debe replicarse en `profile`, `techSkills`, `experience`, `testimonials`, `resumes`, `socialLinks` y `adminUsers`.
+- Las tablas, espaciados, jerarquía visual, botones de alta y menús de acciones deben converger al lenguaje usado en los componentes reales de Booking bajo `ui/shared`.
 
 Cada editor deberá permitir:
 
@@ -121,7 +133,9 @@ Cada editor deberá permitir:
 - Imágenes:
   - el frontend las comprimirá a WebP
   - se enviarán como base64
-  - el backend guardará base64 + metadatos
+  - el backend usará un servicio global de archivos para normalizar cualquier imagen antes de persistirla
+  - el backend guardará `file + mimeType + fileName + extension` en MongoDB
+  - ningún módulo debe depender de bucket externo o MinIO en esta etapa
 - CVs:
   - se almacenarán en Mongo como base64 con `mimeType` y `fileName`
   - si el volumen crece, se podrá migrar a GridFS sin romper el contrato público
@@ -203,4 +217,4 @@ Nota:
 5. Proteger dashboard admin con middleware Bearer.
 6. Ampliar analytics para filtros por fecha y rango.
 7. Construir acceso oculto en header desktop/mobile.
-8. Rehacer dashboard Angular con login, tablas y vistas de edición.
+8. Rehacer dashboard Angular con login, tablas estilo Booking UI y vistas de edición separadas por ruta.

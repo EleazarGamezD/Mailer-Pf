@@ -22,49 +22,6 @@ adminRouter.post(
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
     // #swagger.summary = 'Create admin user'
-    // #swagger.requestBody = {
-    //   required: true,
-    //   content: {
-    //     "application/json": {
-    //       schema: {
-    //         type: "object",
-    //         required: ["email", "username", "displayName", "password"],
-    //         properties: {
-    //           email: { type: "string", example: "admin@portfolio.com" },
-    //           username: { type: "string", example: "eleazar-admin" },
-    //           displayName: { type: "string", example: "Eleazar Gamez" },
-    //           password: { type: "string", example: "MyStrongPassword123" },
-    //           role: { type: "string", enum: ["super_admin", "admin", "editor"], example: "super_admin" }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-    // #swagger.responses[201] = {
-    //   description: 'Admin user created',
-    //   content: {
-    //     "application/json": {
-    //       schema: {
-    //         type: "object",
-    //         properties: {
-    //           created: { type: "boolean", example: true },
-    //           user: {
-    //             type: "object",
-    //             properties: {
-    //               _id: { type: "string", example: "680335b5f26b2d6a6a8ed001" },
-    //               email: { type: "string", example: "admin@portfolio.com" },
-    //               username: { type: "string", example: "eleazar-admin" },
-    //               displayName: { type: "string", example: "Eleazar Gamez" },
-    //               role: { type: "string", example: "super_admin" },
-    //               active: { type: "boolean", example: true },
-    //               lastLoginAt: { type: "string", nullable: true, example: null }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
     const result = await createAdminUser(req.body as Record<string, unknown>);
     res.status(201).json(result);
   }),
@@ -75,48 +32,6 @@ adminRouter.post(
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.summary = 'Login admin user and get JWT'
-    // #swagger.requestBody = {
-    //   required: true,
-    //   content: {
-    //     "application/json": {
-    //       schema: {
-    //         type: "object",
-    //         required: ["email", "password"],
-    //         properties: {
-    //           email: { type: "string", example: "admin@portfolio.com" },
-    //           password: { type: "string", example: "MyStrongPassword123" }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-    // #swagger.responses[200] = {
-    //   description: 'Authenticated admin session',
-    //   content: {
-    //     "application/json": {
-    //       schema: {
-    //         type: "object",
-    //         properties: {
-    //           authenticated: { type: "boolean", example: true },
-    //           accessToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
-    //           tokenType: { type: "string", example: "Bearer" },
-    //           user: {
-    //             type: "object",
-    //             properties: {
-    //               _id: { type: "string", example: "680335b5f26b2d6a6a8ed001" },
-    //               email: { type: "string", example: "admin@portfolio.com" },
-    //               username: { type: "string", example: "eleazar-admin" },
-    //               displayName: { type: "string", example: "Eleazar Gamez" },
-    //               role: { type: "string", example: "super_admin" },
-    //               active: { type: "boolean", example: true },
-    //               lastLoginAt: { type: "string", example: "2026-04-19T15:30:00.000Z" }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
     const result = await loginAdminUser(req.body as Record<string, unknown>);
     res.status(200).json(result);
   }),
