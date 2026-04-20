@@ -113,7 +113,7 @@ node dist/index.js
 - La sección `resumes` ya soporta alta con archivo y reemplazo de archivo existente mediante `base64`, `fileName` y `mimeType`.
 - El dashboard admin ya incluye tabla de `adminUsers` con edición base de `displayName`, `role` y `active` usando Bearer auth.
 - La sección `projects` ya permite editar `coverImage` y galería (`images`) por URL desde el dashboard admin.
-- El `admin-dashboard` ya empezó a dividirse en subcomponentes standalone; `overview`, `profile` y `users` salieron del componente principal.
+- El `admin-dashboard` ya quedó dividido en subcomponentes standalone para `overview`, `projects`, `profile`, `skills`, `experience`, `testimonials`, `resumes`, `socialLinks` y `users`.
 
 ## Próxima fase en curso
 
@@ -134,15 +134,15 @@ node dist/index.js
 - [x] Formularios CRUD por módulo
 - [x] Integración Angular con token Bearer
 - [x] Mejorar edición avanzada de proyectos e imágenes
-- [ ] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
+- [x] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
 
 Estado actual de esa división:
 - [x] `overview`
 - [x] `profile`
 - [x] `users`
-- [ ] `projects`
-- [ ] `skills`
-- [ ] `experience`
-- [ ] `testimonials`
-- [ ] `resumes`
-- [ ] `socialLinks`
+- [x] `projects`
+- [x] `skills`
+- [x] `experience`
+- [x] `testimonials`
+- [x] `resumes`
+- [x] `socialLinks`

@@ -22,7 +22,7 @@
   - tabla admin para `adminUsers` con edición base de nombre, rol y estado
   - edición de `projects` con `coverImage` y galería por URL
   - `resumes` con creación y reemplazo de archivo vía `base64`
-  - descomposición iniciada del dashboard en subcomponentes standalone para `overview`, `profile` y `users`
+  - dashboard ya dividido en subcomponentes standalone por sección
 
 ## Cambio de criterio ya aprobado por el usuario
 
@@ -47,12 +47,7 @@ La zona admin debe quedar así:
 ## Próximos pasos recomendados
 
 1. Frontend admin
-- dividir `admin-dashboard` en subcomponentes por sección
-
-Estado ya extraído:
-- `overview`
-- `profile`
-- `users`
+- profundizar UX y validaciones del dashboard ya modularizado
 
 2. Backend
 - separar con más claridad rutas `x-api-key` de rutas `Bearer`
