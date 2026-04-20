@@ -5,11 +5,13 @@ import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import {
   createAdminUser,
   getAdminUserById,
+  listAdminUsers,
   loginAdminUser,
   seedInitialContent,
+  updateAdminUser,
 } from '../modules/admin/admin.service.js';
-import { asyncHandler } from '../utils/async-handler.js';
 import { getDashboardMetrics } from '../modules/analytics/analytics.service.js';
+import { asyncHandler } from '../utils/async-handler.js';
 
 export const adminRouter = Router();
 
@@ -116,6 +118,34 @@ adminRouter.post(
     //   }
     // }
     const result = await loginAdminUser(req.body as Record<string, unknown>);
+    res.status(200).json(result);
+  }),
+);
+
+adminRouter.get(
+  '/users',
+  requireAdminAuth,
+  asyncHandler(async (_req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "BearerAuth": [] }]
+    // #swagger.summary = 'List admin users'
+    const users = await listAdminUsers();
+
+    res.status(200).json({
+      users,
+    });
+  }),
+);
+
+adminRouter.patch(
+  '/users/:id',
+  requireAdminAuth,
+  asyncHandler(async (req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "BearerAuth": [] }]
+    // #swagger.summary = 'Update admin user'
+    const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await updateAdminUser(userId, req.body as Record<string, unknown>);
     res.status(200).json(result);
   }),
 );

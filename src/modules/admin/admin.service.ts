@@ -379,3 +379,55 @@ export async function getAdminUserById(id: string) {
 
   return sanitizeAdminUser(adminUser);
 }
+
+export async function listAdminUsers() {
+  const adminUsers = await adminUsersRepository.find({}, {
+    sort: { createdAt: -1 },
+  });
+
+  return adminUsers
+    .map((adminUser) => sanitizeAdminUser(adminUser))
+    .filter(Boolean);
+}
+
+export async function updateAdminUser(id: string, payload: Record<string, unknown>) {
+  const database = getDatabase();
+  const { ObjectId } = await import('mongodb');
+
+  if (!ObjectId.isValid(id)) {
+    throw createHttpError(400, 'Invalid admin user id.');
+  }
+
+  const currentUser = await database.collection<AdminUserDocument>('admin_users').findOne({
+    _id: new ObjectId(id),
+  });
+
+  if (!currentUser) {
+    throw createHttpError(404, 'Admin user not found.');
+  }
+
+  const nextDisplayName = typeof payload.displayName === 'string'
+    ? payload.displayName.trim()
+    : currentUser.displayName;
+  const requestedRole = typeof payload.role === 'string' ? payload.role : currentUser.role;
+  const nextRole = requestedRole === 'super_admin' || requestedRole === 'editor' || requestedRole === 'admin'
+    ? requestedRole
+    : currentUser.role;
+  const nextActive = typeof payload.active === 'boolean' ? payload.active : currentUser.active;
+
+  if (!nextDisplayName) {
+    throw createHttpError(400, 'displayName is required.');
+  }
+
+  const updatedUser = await adminUsersRepository.updateById(currentUser._id!, {
+    displayName: nextDisplayName,
+    role: nextRole,
+    active: nextActive,
+    updatedAt: new Date(),
+  });
+
+  return {
+    updated: true,
+    user: sanitizeAdminUser(updatedUser),
+  };
+}

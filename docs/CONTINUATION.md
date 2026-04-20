@@ -12,10 +12,17 @@
 - `resumes` ya quedó cableado en frontend para descargar desde `base64`.
 - El backend ya tiene base TS + Mongo + Swagger + seed.
 - El backend desplegado en Vercel probablemente sigue viejo hasta nuevo redeploy.
-- El dashboard admin actual del frontend no es válido como solución final:
-  - usa `sessionStorage` directo
-  - no usa JWT
-  - rompe SSR/prerender
+- La base admin real ya quedó operativa:
+  - acceso oculto en header desktop y mobile
+  - login admin separado en `admin/login`
+  - dashboard en `admin/dashboard` protegido con guard
+  - autenticación JWT en frontend mediante storage abstraction SSR-safe
+  - métricas admin con filtros por `year`, `month`, `day`, `from`, `to`
+  - CRUD visible para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`
+  - tabla admin para `adminUsers` con edición base de nombre, rol y estado
+  - edición de `projects` con `coverImage` y galería por URL
+  - `resumes` con creación y reemplazo de archivo vía `base64`
+  - descomposición iniciada del dashboard en subcomponentes standalone para `overview`, `profile` y `users`
 
 ## Cambio de criterio ya aprobado por el usuario
 
@@ -39,35 +46,22 @@ La zona admin debe quedar así:
 
 ## Próximos pasos recomendados
 
-1. Backend
-- añadir dependencias para JWT
-- ampliar `env` con `JWT_SECRET`, `JWT_EXPIRES_IN`
-- modelar `admin_users`
-- crear hash/verify de password
-- crear `POST /api/admin/users` protegido por `x-api-key`
-- crear `POST /api/admin/auth/login`
-- crear `GET /api/admin/me`
-- crear middleware `requireAdminAuth`
+1. Frontend admin
+- dividir `admin-dashboard` en subcomponentes por sección
 
-2. Analytics
-- ampliar `GET /api/admin/dashboard/metrics`
-- aceptar `year`, `month`, `day`, `from`, `to`
-- devolver agregados por tipo, ruta, proyecto e idioma
+Estado ya extraído:
+- `overview`
+- `profile`
+- `users`
 
-3. Frontend admin
-- crear servicio auth admin con storage abstraction
-- agregar acceso oculto en header desktop/mobile
-- separar login admin de dashboard
-- rehacer dashboard con tabs o secciones:
-  - resumen
-  - proyectos
-  - testimonials
-  - resumes
-  - skills
-  - experience
-  - social links
-  - profile
-  - users
+2. Backend
+- separar con más claridad rutas `x-api-key` de rutas `Bearer`
+- refinar Swagger para reflejar `ApiKeyAuth` y `BearerAuth`
+- evaluar endpoints específicos de admin users si el frontend va a administrarlos
+
+3. Despliegue
+- redeployar `Mailer-Pf` en Vercel para alinear el prerender del frontend con el backend real
+- volver a validar `docs` y métricas sobre el entorno desplegado
 
 ## Variables de entorno necesarias
 

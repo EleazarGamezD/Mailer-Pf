@@ -32,10 +32,10 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [ ] Terminar diseño final de tarjetas dinámicas de proyectos.
 - [ ] Crear util frontend para compresión WebP + base64.
 - [ ] Implementar tracking más completo de interacciones.
-- [ ] Reemplazar autenticación admin provisional por `admin users + JWT`.
-- [ ] Crear acceso oculto en header desktop y mobile.
-- [ ] Construir login admin SSR-safe.
-- [ ] Construir dashboard admin con tablas y vistas de edición.
+- [x] Reemplazar autenticación admin provisional por `admin users + JWT`.
+- [x] Crear acceso oculto en header desktop y mobile.
+- [x] Construir login admin SSR-safe.
+- [x] Construir dashboard admin con tablas y vistas de edición.
 - [ ] Implementar traducción automática real al inglés para contenido dinámico.
 
 ## Estado por ambiente
@@ -75,18 +75,17 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Enviar `phone` del contacto de frontend a backend.
 - [x] Maquetar correos de contacto con templates reales de portfolio.
 - [ ] Ajustar detalles visuales restantes del home público.
-- [ ] Agregar acceso oculto al dashboard en header desktop.
-- [ ] Agregar acceso oculto al dashboard en menú mobile.
-- [ ] Crear vista `admin-login`.
-- [ ] Rehacer `admin-dashboard` con auth JWT y sin acceso directo a storage en SSR.
-- [ ] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks`, `adminUsers`.
-- [ ] Crear formularios admin para CRUD de todos los módulos dinámicos.
+- [x] Agregar acceso oculto al dashboard en header desktop.
+- [x] Agregar acceso oculto al dashboard en menú mobile.
+- [x] Crear vista `admin-login`.
+- [x] Rehacer `admin-dashboard` con auth JWT y sin acceso directo a storage en SSR.
+- [x] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y `adminUsers`.
+- [x] Crear formularios admin para CRUD de `projects`, `profile`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y gestión base de `adminUsers`.
 
 ## Hallazgos importantes
 
-- El dashboard actual del frontend usa `sessionStorage` directo y no sirve como diseño final.
-- El backend actual solo tiene un login admin placeholder por `ADMIN_API_KEY`; debe eliminarse como contrato final.
-- `GET /api/analytics/dashboard` hoy solo devuelve agregados simples; falta la capa admin real con filtros.
+- El login admin real ya usa JWT y el dashboard Angular ya no depende de `sessionStorage`/`localStorage` directos.
+- `GET /api/admin/dashboard/metrics` ya soporta filtros por `year`, `month`, `day`, `from`, `to` y el dashboard los consume.
 - El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
 - El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
 
@@ -109,6 +108,12 @@ node dist/index.js
 - El frontend Angular compila tras migrar el contenido dinámico público.
 - El detalle de proyecto ya renderiza media, chips tecnológicos, CTAs y galería desde DTO real.
 - El flujo de contacto ya envía `phone` de extremo a extremo y usa plantillas de correo propias.
+- El admin Angular ya separa `admin/login` de `admin/dashboard`, protege el dashboard con guard y consume métricas admin con filtros.
+- El dashboard admin ya permite CRUD para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`.
+- La sección `resumes` ya soporta alta con archivo y reemplazo de archivo existente mediante `base64`, `fileName` y `mimeType`.
+- El dashboard admin ya incluye tabla de `adminUsers` con edición base de `displayName`, `role` y `active` usando Bearer auth.
+- La sección `projects` ya permite editar `coverImage` y galería (`images`) por URL desde el dashboard admin.
+- El `admin-dashboard` ya empezó a dividirse en subcomponentes standalone; `overview`, `profile` y `users` salieron del componente principal.
 
 ## Próxima fase en curso
 
@@ -119,12 +124,25 @@ node dist/index.js
 - [x] Modelo y repositorio `admin_users`
 - [x] Endpoints `create admin user`, `login`, `me`
 - [x] Middleware Bearer
-- [ ] Header oculto desktop/mobile
-- [ ] Login admin SSR-safe
+- [x] Header oculto desktop/mobile
+- [x] Login admin SSR-safe
 
 ### Fase dashboard
 
-- [ ] Métricas con filtros por rango
-- [ ] Tablas admin por módulo
-- [ ] Formularios CRUD por módulo
-- [ ] Integración Angular con token Bearer
+- [x] Métricas con filtros por rango
+- [x] Tablas admin por módulo
+- [x] Formularios CRUD por módulo
+- [x] Integración Angular con token Bearer
+- [x] Mejorar edición avanzada de proyectos e imágenes
+- [ ] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
+
+Estado actual de esa división:
+- [x] `overview`
+- [x] `profile`
+- [x] `users`
+- [ ] `projects`
+- [ ] `skills`
+- [ ] `experience`
+- [ ] `testimonials`
+- [ ] `resumes`
+- [ ] `socialLinks`
