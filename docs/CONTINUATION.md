@@ -23,7 +23,8 @@
   - edición de `projects` con `coverImage` y galería por URL
   - `resumes` con creación y reemplazo de archivo vía `base64`
   - dashboard ya dividido en subcomponentes standalone por sección
-  - shell CoreUI inicial ya montado con sidebar/header/footer y navegación por sección
+  - shell CoreUI ya montado con sidebar/header/footer y páginas hijas reales por sección
+  - el dashboard monolítico anterior ya fue eliminado del frontend
   - utilidad frontend reservada para imágenes `base64/webp` orientadas a persistencia en Mongo
 
 ## Cambio de criterio ya aprobado por el usuario
@@ -50,7 +51,6 @@ La zona admin debe quedar así:
 
 1. Frontend admin
 - terminar la migración del dashboard al lenguaje visual CoreUI a nivel de tablas, cards, formularios y navegación
-- mover secciones a páginas hijas reales para no cargar todo el estado en un solo componente
 - conectar `projects` y luego `profile.heroSlides` al nuevo contrato de imágenes embebidas
 
 2. Backend
