@@ -29,7 +29,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Eliminar mapeos intermedios en `projects` y `content` services.
 - [ ] Ejecutar seed inicial en el ambiente que se vaya a usar.
 - [x] Terminar detalle de proyecto por `id/slug`.
-- [ ] Terminar diseño final de tarjetas dinámicas de proyectos.
+- [x] Terminar diseño final de tarjetas dinámicas de proyectos.
 - [x] Crear util frontend para compresión WebP + base64.
 - [ ] Implementar tracking más completo de interacciones.
 - [x] Reemplazar autenticación admin provisional por `admin users + JWT`.
@@ -75,6 +75,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Ajustar `projectDetails` con layout más rico y galería.
 - [x] Enviar `phone` del contacto de frontend a backend.
 - [x] Maquetar correos de contacto con templates reales de portfolio.
+- [x] Reordenar header público con idiomas, redes y acceso admin alineados.
+- [x] Ajustar diseño principal de tarjetas dinámicas de proyectos del home.
 - [ ] Ajustar detalles visuales restantes del home público.
 - [x] Agregar acceso oculto al dashboard en header desktop.
 - [x] Agregar acceso oculto al dashboard en menú mobile.
@@ -93,6 +95,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - `GET /api/admin/dashboard/metrics` ya soporta filtros por `year`, `month`, `day`, `from`, `to` y el dashboard los consume.
 - El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
 - El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
+- El header público ya usa un grupo de acciones explícito para idioma, redes y acceso admin; no debe volver a depender de estilos genéricos heredados del template.
 - La migración visual del admin cambió de criterio: la UI pública sigue igual y solo el admin debe converger al dashboard CoreUI.
 - Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, y la referencia correcta para el dashboard quedó redefinida: la UX debe copiar `src/app/ui`, no `template`.
 - El backend ya necesita consolidar un `file service` global para imágenes persistidas en MongoDB; MinIO/bucket no forma parte del alcance aprobado actual.
@@ -125,6 +128,7 @@ node dist/index.js
 - El dashboard admin ya incluye tabla de `adminUsers` con edición base de `displayName`, `role` y `active` usando Bearer auth.
 - `projects` dejó de ser válido como editor inline dentro de la tabla; el criterio actualizado exige listado Booking-style y formulario separado para create/edit.
 - El `admin-dashboard` ya quedó dividido en subcomponentes standalone para `overview`, `projects`, `profile`, `skills`, `experience`, `testimonials`, `resumes`, `socialLinks` y `users`.
+- El slider público de proyectos ya no usa la card vieja del template y quedó reemplazado por una card propia basada en DTO real.
 
 ## Próxima fase en curso
 
