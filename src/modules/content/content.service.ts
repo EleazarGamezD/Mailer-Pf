@@ -68,6 +68,11 @@ export async function getProfile() {
 
 export async function upsertProfile(payload: Record<string, unknown>) {
   const existing = await profileRepository.findOne({ key: 'main-profile' });
+  const metadata =
+    payload.metadata && typeof payload.metadata === 'object'
+      ? (payload.metadata as Record<string, unknown>)
+      : existing?.metadata || {};
+
   const base = {
     key: 'main-profile',
     slug: 'main-profile',
@@ -78,6 +83,7 @@ export async function upsertProfile(payload: Record<string, unknown>) {
     location: typeof payload.location === 'string' ? payload.location : '',
     email: typeof payload.email === 'string' ? payload.email : '',
     phone: typeof payload.phone === 'string' ? payload.phone : '',
+    metadata,
     updatedAt: new Date(),
   };
 

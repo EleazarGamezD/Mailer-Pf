@@ -5,6 +5,15 @@ export interface LocalizedText {
   en: string;
 }
 
+export interface StoredImageAsset {
+  file?: string;
+  mimeType?: string;
+  fileName?: string;
+  extension?: string;
+  url?: string;
+  base64?: string;
+}
+
 export interface BaseEntity extends Document {
   _id?: ObjectId;
   createdAt: Date;
@@ -17,8 +26,8 @@ export interface ProjectDocument extends BaseEntity {
   summary: LocalizedText;
   description: LocalizedText;
   stack: string[];
-  images: unknown[];
-  coverImage: unknown | null;
+  images: Array<string | StoredImageAsset>;
+  coverImage: string | StoredImageAsset | null;
   projectLink: string;
   codeLink: string;
   featured: boolean;
@@ -53,6 +62,7 @@ export interface ProfileDocument extends BaseEntity {
   location: string;
   email: string;
   phone: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface AnalyticsEventDocument extends Document {
