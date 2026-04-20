@@ -15,7 +15,7 @@
 - La base admin real ya quedó operativa:
   - acceso oculto en header desktop y mobile
   - login admin separado en `admin/login`
-  - dashboard en `admin/dashboard` protegido con guard
+  - dashboard ahora en shell CoreUI con rutas `admin/dashboard/:section` protegido con guard
   - autenticación JWT en frontend mediante storage abstraction SSR-safe
   - métricas admin con filtros por `year`, `month`, `day`, `from`, `to`
   - CRUD visible para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`
@@ -23,6 +23,8 @@
   - edición de `projects` con `coverImage` y galería por URL
   - `resumes` con creación y reemplazo de archivo vía `base64`
   - dashboard ya dividido en subcomponentes standalone por sección
+  - shell CoreUI inicial ya montado con sidebar/header/footer y navegación por sección
+  - utilidad frontend reservada para imágenes `base64/webp` orientadas a persistencia en Mongo
 
 ## Cambio de criterio ya aprobado por el usuario
 
@@ -47,12 +49,15 @@ La zona admin debe quedar así:
 ## Próximos pasos recomendados
 
 1. Frontend admin
-- profundizar UX y validaciones del dashboard ya modularizado
+- terminar la migración del dashboard al lenguaje visual CoreUI a nivel de tablas, cards, formularios y navegación
+- mover secciones a páginas hijas reales para no cargar todo el estado en un solo componente
+- conectar `projects` y luego `profile.heroSlides` al nuevo contrato de imágenes embebidas
 
 2. Backend
 - separar con más claridad rutas `x-api-key` de rutas `Bearer`
 - refinar Swagger para reflejar `ApiKeyAuth` y `BearerAuth`
 - evaluar endpoints específicos de admin users si el frontend va a administrarlos
+- definir contrato final para `coverImage`, `images` y otros assets como objetos persistidos en Mongo
 
 3. Despliegue
 - redeployar `Mailer-Pf` en Vercel para alinear el prerender del frontend con el backend real

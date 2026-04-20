@@ -36,6 +36,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Crear acceso oculto en header desktop y mobile.
 - [x] Construir login admin SSR-safe.
 - [x] Construir dashboard admin con tablas y vistas de edición.
+- [~] Migrar el shell visual del admin a CoreUI manteniendo intacta la UI pública.
 - [ ] Implementar traducción automática real al inglés para contenido dinámico.
 
 ## Estado por ambiente
@@ -81,6 +82,7 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - [x] Rehacer `admin-dashboard` con auth JWT y sin acceso directo a storage en SSR.
 - [x] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y `adminUsers`.
 - [x] Crear formularios admin para CRUD de `projects`, `profile`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y gestión base de `adminUsers`.
+- [~] Montar layout admin CoreUI con sidebar/header y navegación por secciones.
 
 ## Hallazgos importantes
 
@@ -88,6 +90,8 @@ Si otra IA o persona retoma el trabajo, debe leer en este orden:
 - `GET /api/admin/dashboard/metrics` ya soporta filtros por `year`, `month`, `day`, `from`, `to` y el dashboard los consume.
 - El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
 - El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
+- La migración visual del admin cambió de criterio: la UI pública sigue igual y solo el admin debe converger al dashboard CoreUI.
+- Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, pero aún no está conectada a los formularios de `projects` y `profile`.
 
 ## Comandos validados
 
@@ -135,6 +139,7 @@ node dist/index.js
 - [x] Integración Angular con token Bearer
 - [x] Mejorar edición avanzada de proyectos e imágenes
 - [x] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
+- [~] Reemplazar el shell del admin por layout CoreUI y empezar a mover la navegación a rutas reales
 
 Estado actual de esa división:
 - [x] `overview`
