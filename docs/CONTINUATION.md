@@ -29,6 +29,8 @@
   - `My-Portfolio` ya quedó alineado a Angular 21 y al builder moderno (`@angular/build`) igual que la referencia `BookingAgency_Frontend_V2`
   - SSR/prerender ya fue ajustado al API nueva (`provideServerRendering(withRoutes(...))` y `BootstrapContext` en `main.server.ts`)
   - la deuda técnica inmediata de compatibilidad quedó concentrada en `ng-recaptcha`
+  - el shell admin ya tiene breadcrumb dinámico por sección y header contextual
+  - las páginas contenedoras del admin ya empezaron a usar wrappers CoreUI reales (`c-alert`, `c-card`, `c-spinner`, `cButton`) en lugar de markup Bootstrap genérico
 
 ## Cambio de criterio ya aprobado por el usuario
 
