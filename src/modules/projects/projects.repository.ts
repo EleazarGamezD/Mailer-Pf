@@ -1,4 +1,4 @@
-import type { ProjectDocument } from '../../types/domain.js';
+import type { ProjectDocument } from '../../core/interfaces/domain.js';
 
 import { BaseRepository } from '../../repositories/base.repository.js';
 

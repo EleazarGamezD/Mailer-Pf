@@ -1,18 +1,22 @@
-import type { ProjectDocument } from '../../types/domain.js';
+import type { ProjectDocument } from '../../core/interfaces/domain.js';
+import type { StoredImageAsset } from '../../core/interfaces/image.js';
+import type { ProjectPayload } from '../../core/interfaces/requests.js';
 
-import { parseObjectId } from '../../utils/object-id.js';
-import { createHttpError } from '../../utils/http-error.js';
 import {
   buildSlugFromLocalizedTitle,
   getLocalizedField,
   resolveEnglishContent,
 } from '../../utils/content.helpers.js';
-import { fileService } from '../files/file.service.js';
+import { createHttpError } from '../../utils/http-error.js';
+import { parseObjectId } from '../../utils/object-id.js';
+import { fileService } from '../files/index.js';
 import { ProjectsRepository } from './projects.repository.js';
 
 const projectsRepository = new ProjectsRepository();
 
-function normalizeProjectPayload(payload: Record<string, unknown>): Omit<ProjectDocument, '_id' | 'createdAt' | 'updatedAt'> {
+async function normalizeProjectPayload(
+  payload: ProjectPayload,
+): Promise<Omit<ProjectDocument, '_id' | 'createdAt' | 'updatedAt'>> {
   const title = resolveEnglishContent(getLocalizedField(payload, 'title'));
   const summary = resolveEnglishContent(getLocalizedField(payload, 'summary'));
   const description = resolveEnglishContent(getLocalizedField(payload, 'description'));
@@ -30,8 +34,8 @@ function normalizeProjectPayload(payload: Record<string, unknown>): Omit<Project
     summary,
     description,
     stack: Array.isArray(payload.stack) ? payload.stack.filter((value): value is string => typeof value === 'string') : [],
-    images: fileService.normalizeImageCollection(payload.images, 'project images'),
-    coverImage: fileService.normalizeImageAsset(payload.coverImage, 'project cover image'),
+    images: await fileService.normalizeImageCollection(payload.images, 'project images'),
+    coverImage: await fileService.normalizeImageAsset(payload.coverImage, 'project cover image'),
     projectLink: typeof payload.projectLink === 'string' ? payload.projectLink : '',
     codeLink: typeof payload.codeLink === 'string' ? payload.codeLink : '',
     featured: Boolean(payload.featured),
@@ -40,8 +44,19 @@ function normalizeProjectPayload(payload: Record<string, unknown>): Omit<Project
   };
 }
 
+async function resolveProjectAssets(project: ProjectDocument) {
+  return {
+    ...project,
+    images: (await Promise.all(project.images.map((image) => fileService.resolveImageAsset(image)))).filter(
+      (image): image is string | StoredImageAsset => image !== null,
+    ),
+    coverImage: await fileService.resolveImageAsset(project.coverImage),
+  };
+}
+
 export async function listProjects() {
-  return projectsRepository.find({}, { sort: { createdAt: -1 } });
+  const projects = await projectsRepository.find({}, { sort: { createdAt: -1 } });
+  return Promise.all(projects.map((project) => resolveProjectAssets(project)));
 }
 
 export async function getProjectByIdOrSlug(idOrSlug: string) {
@@ -53,12 +68,12 @@ export async function getProjectByIdOrSlug(idOrSlug: string) {
     throw createHttpError(404, 'Project not found.');
   }
 
-  return project;
+  return resolveProjectAssets(project);
 }
 
-export async function createProject(payload: Record<string, unknown>) {
+export async function createProject(payload: ProjectPayload) {
   const document = {
-    ...normalizeProjectPayload(payload),
+    ...(await normalizeProjectPayload(payload)),
     createdAt: new Date(),
     updatedAt: new Date(),
   } as ProjectDocument;
@@ -67,9 +82,9 @@ export async function createProject(payload: Record<string, unknown>) {
   return getProjectByIdOrSlug(document.slug);
 }
 
-export async function updateProject(id: string, payload: Record<string, unknown>) {
+export async function updateProject(id: string, payload: ProjectPayload) {
   const project = await projectsRepository.updateById(parseObjectId(id), {
-    ...normalizeProjectPayload(payload),
+    ...(await normalizeProjectPayload(payload)),
     updatedAt: new Date(),
   });
 
@@ -77,7 +92,7 @@ export async function updateProject(id: string, payload: Record<string, unknown>
     throw createHttpError(404, 'Project not found.');
   }
 
-  return project;
+  return resolveProjectAssets(project);
 }
 
 export async function deleteProject(id: string) {

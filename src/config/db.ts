@@ -17,6 +17,7 @@ export async function connectToDatabase() {
   await Promise.all([
     database.collection('projects').createIndex({ slug: 1 }, { unique: true }),
     database.collection('profile').createIndex({ key: 1 }, { unique: true }),
+    database.collection('files').createIndex({ fileName: 1 }, { unique: true }),
     database.collection('tech_skills').createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection('experience').createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection('social_links').createIndex({ slug: 1 }, { unique: true, sparse: true }),

@@ -1,5 +1,11 @@
 import { Router } from 'express';
 
+import type {
+  AnalyticsFiltersPayload,
+  CreateAdminUserPayload,
+  LoginAdminUserPayload,
+  UpdateAdminUserPayload,
+} from '../core/interfaces/requests.js';
 import { requireAdminAuth, type AuthenticatedAdminRequest } from '../middlewares/admin-auth.middleware.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import {
@@ -22,7 +28,7 @@ adminRouter.post(
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
     // #swagger.summary = 'Create admin user'
-    const result = await createAdminUser(req.body as Record<string, unknown>);
+    const result = await createAdminUser(req.body as CreateAdminUserPayload);
     res.status(201).json(result);
   }),
 );
@@ -32,7 +38,7 @@ adminRouter.post(
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.summary = 'Login admin user and get JWT'
-    const result = await loginAdminUser(req.body as Record<string, unknown>);
+    const result = await loginAdminUser(req.body as LoginAdminUserPayload);
     res.status(200).json(result);
   }),
 );
@@ -60,7 +66,7 @@ adminRouter.patch(
     // #swagger.security = [{ "BearerAuth": [] }]
     // #swagger.summary = 'Update admin user'
     const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const result = await updateAdminUser(userId, req.body as Record<string, unknown>);
+    const result = await updateAdminUser(userId, req.body as UpdateAdminUserPayload);
     res.status(200).json(result);
   }),
 );
@@ -94,7 +100,7 @@ adminRouter.get(
     // #swagger.parameters['day'] = { in: 'query', description: 'Filter by day of month', type: 'integer', example: 19 }
     // #swagger.parameters['from'] = { in: 'query', description: 'Start date ISO string', type: 'string', example: '2026-04-01T00:00:00.000Z' }
     // #swagger.parameters['to'] = { in: 'query', description: 'End date ISO string', type: 'string', example: '2026-04-19T23:59:59.999Z' }
-    const query = req.query as Record<string, unknown>;
+    const query = req.query as AnalyticsFiltersPayload;
     const result = await getDashboardMetrics(query);
     res.status(200).json(result);
   }),

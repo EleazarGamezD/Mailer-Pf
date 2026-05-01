@@ -1,4 +1,4 @@
-import type { AnalyticsEventDocument } from '../../types/domain.js';
+import type { AnalyticsEventDocument } from '../../core/interfaces/domain.js';
 
 import { BaseRepository } from '../../repositories/base.repository.js';
 

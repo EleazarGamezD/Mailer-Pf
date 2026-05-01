@@ -1,17 +1,10 @@
 import type { Document, ObjectId } from 'mongodb';
+import type { StoredFileDocument } from './image.js';
+import type { JsonObject, JsonValue } from './json.js';
 
 export interface LocalizedText {
   es: string;
   en: string;
-}
-
-export interface StoredImageAsset {
-  file?: string;
-  mimeType?: string;
-  fileName?: string;
-  extension?: string;
-  url?: string;
-  base64?: string;
 }
 
 export interface BaseEntity extends Document {
@@ -20,14 +13,18 @@ export interface BaseEntity extends Document {
   updatedAt: Date;
 }
 
+export interface StoredFileEntity extends Document, StoredFileDocument {
+  _id?: ObjectId;
+}
+
 export interface ProjectDocument extends BaseEntity {
   slug: string;
   title: LocalizedText;
   summary: LocalizedText;
   description: LocalizedText;
   stack: string[];
-  images: Array<string | StoredImageAsset>;
-  coverImage: string | StoredImageAsset | null;
+  images: string[];
+  coverImage: string | null;
   projectLink: string;
   codeLink: string;
   featured: boolean;
@@ -41,12 +38,12 @@ export interface ContentDocument extends BaseEntity {
   title: LocalizedText;
   description: LocalizedText;
   label: LocalizedText;
-  value: unknown;
-  icon: unknown | null;
+  value: JsonValue;
+  icon: JsonValue | null;
   href: string;
   order: number;
   active: boolean;
-  metadata: Record<string, unknown>;
+  metadata: JsonObject;
   fileName: string;
   mimeType: string;
   base64: string;
@@ -62,7 +59,7 @@ export interface ProfileDocument extends BaseEntity {
   location: string;
   email: string;
   phone: string;
-  metadata: Record<string, unknown>;
+  metadata: JsonObject;
 }
 
 export interface AnalyticsEventDocument extends Document {
@@ -72,7 +69,7 @@ export interface AnalyticsEventDocument extends Document {
   projectId: string | null;
   language: string;
   sessionId: string | null;
-  meta: Record<string, unknown>;
+  meta: JsonObject;
   createdAt: Date;
 }
 

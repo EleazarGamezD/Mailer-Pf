@@ -1,4 +1,4 @@
-import type { AdminUserDocument } from '../types/domain.js';
+import type { AdminUserDocument } from '../core/interfaces/domain.js';
 
 import { BaseRepository } from './base.repository.js';
 

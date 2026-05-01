@@ -5,6 +5,7 @@ import path from 'path';
 import url from 'url';
 
 import { env } from '../../config/env.js';
+import type { CaptchaPayload, ContactPayload } from '../../core/interfaces/requests.js';
 import { createHttpError } from '../../utils/http-error.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
@@ -66,7 +67,7 @@ function buildAttachments() {
   }));
 }
 
-export async function sendContactEmail(payload: Record<string, unknown>) {
+export async function sendContactEmail(payload: ContactPayload) {
   const subject = typeof payload.subject === 'string' ? payload.subject : '';
   const message = typeof payload.message === 'string' ? payload.message : '';
   const contactEmail = typeof payload.contactEmail === 'string' ? payload.contactEmail : '';
@@ -120,7 +121,7 @@ export async function sendContactEmail(payload: Record<string, unknown>) {
   };
 }
 
-export async function verifyCaptcha(payload: Record<string, unknown>) {
+export async function verifyCaptcha(payload: CaptchaPayload) {
   const token = typeof payload.token === 'string' ? payload.token : '';
 
   if (!env.recaptchaSecretKey) {

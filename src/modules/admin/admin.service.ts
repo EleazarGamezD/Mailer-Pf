@@ -1,6 +1,11 @@
 import { getDatabase } from '../../config/db.js';
+import type { AdminUserDocument } from '../../core/interfaces/domain.js';
+import type {
+  CreateAdminUserPayload,
+  LoginAdminUserPayload,
+  UpdateAdminUserPayload,
+} from '../../core/interfaces/requests.js';
 import { AdminUsersRepository } from '../../repositories/admin-users.repository.js';
-import type { AdminUserDocument } from '../../types/domain.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { signAdminToken } from '../../utils/jwt.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
@@ -265,7 +270,7 @@ function sanitizeAdminUser(adminUser: AdminUserDocument | null) {
   return safeAdminUser;
 }
 
-export async function createAdminUser(payload: Record<string, unknown>) {
+export async function createAdminUser(payload: CreateAdminUserPayload) {
   const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : '';
   const username = typeof payload.username === 'string' ? payload.username.trim().toLowerCase() : '';
   const displayName = typeof payload.displayName === 'string' ? payload.displayName.trim() : '';
@@ -313,7 +318,7 @@ export async function createAdminUser(payload: Record<string, unknown>) {
   };
 }
 
-export async function loginAdminUser(payload: Record<string, unknown>) {
+export async function loginAdminUser(payload: LoginAdminUserPayload) {
   const login =
     typeof payload.email === 'string'
       ? payload.email.trim().toLowerCase()
@@ -390,7 +395,7 @@ export async function listAdminUsers() {
     .filter(Boolean);
 }
 
-export async function updateAdminUser(id: string, payload: Record<string, unknown>) {
+export async function updateAdminUser(id: string, payload: UpdateAdminUserPayload) {
   const database = getDatabase();
   const { ObjectId } = await import('mongodb');
 

@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import { readSwaggerDocument } from './docs/swagger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
+import { assetsRouter } from './routes/assets.routes.js';
 import { apiRoutes } from './routes/index.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
@@ -57,6 +58,7 @@ export function createApp() {
     }),
   );
   app.use('/api', apiRoutes);
+  app.use('/assets', assetsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

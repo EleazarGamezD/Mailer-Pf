@@ -1,8 +1,10 @@
-import type { Filter, OptionalUnlessRequiredId, WithId } from 'mongodb';
+import type { Filter, ObjectId, OptionalUnlessRequiredId } from 'mongodb';
 
 import { getDatabase } from '../config/db.js';
 
-export class BaseRepository<TSchema extends { _id?: unknown }> {
+type RepositoryDocumentId = ObjectId | string | number | bigint | boolean | Date | Uint8Array;
+
+export class BaseRepository<TSchema extends { _id?: RepositoryDocumentId }> {
   private readonly collectionName: string;
 
   constructor(collectionName: string) {

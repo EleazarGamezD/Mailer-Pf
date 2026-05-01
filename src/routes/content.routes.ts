@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import type { ContentPayload, ProfilePayload } from '../core/interfaces/requests.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getSingleParam } from '../utils/request-param.js';
@@ -28,7 +29,7 @@ contentRouter.put(
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Content']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
-    res.json(await upsertProfile(req.body as Record<string, unknown>));
+    res.json(await upsertProfile(req.body as ProfilePayload));
   }),
 );
 
@@ -49,7 +50,7 @@ for (const resourceName of resourceNames) {
     asyncHandler(async (req, res) => {
       // #swagger.tags = ['Content']
       // #swagger.security = [{ "ApiKeyAuth": [] }]
-      res.status(201).json(await createContentItem(resourceName, req.body as Record<string, unknown>));
+      res.status(201).json(await createContentItem(resourceName, req.body as ContentPayload));
     }),
   );
 
@@ -63,7 +64,7 @@ for (const resourceName of resourceNames) {
         await updateContentItem(
           resourceName,
           getSingleParam(req.params.id, 'id'),
-          req.body as Record<string, unknown>,
+          req.body as ContentPayload,
         ),
       );
     }),

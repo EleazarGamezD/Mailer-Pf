@@ -1,4 +1,4 @@
-import type { ContentDocument, ProfileDocument } from '../../types/domain.js';
+import type { ContentDocument, ProfileDocument } from '../../core/interfaces/domain.js';
 
 import { BaseRepository } from '../../repositories/base.repository.js';
 

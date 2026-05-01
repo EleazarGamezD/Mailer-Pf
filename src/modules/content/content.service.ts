@@ -1,13 +1,15 @@
-import type { ContentDocument, ProfileDocument } from '../../types/domain.js';
+import type { ContentDocument, ProfileDocument } from '../../core/interfaces/domain.js';
+import type { ContentPayload, ProfilePayload } from '../../core/interfaces/requests.js';
+import { isJsonObject } from '../../core/interfaces/json.js';
 
-import { parseObjectId } from '../../utils/object-id.js';
-import { createHttpError } from '../../utils/http-error.js';
 import {
   buildSlugFromLocalizedTitle,
   getLocalizedField,
   resolveEnglishContent,
 } from '../../utils/content.helpers.js';
-import { fileService } from '../files/file.service.js';
+import { createHttpError } from '../../utils/http-error.js';
+import { parseObjectId } from '../../utils/object-id.js';
+import { fileService } from '../files/index.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
 const collectionMap = {
@@ -26,8 +28,19 @@ function getRepository(resourceName: ResourceName) {
   return collectionMap[resourceName];
 }
 
+async function resolveProfileDocument(profile: ProfileDocument | null) {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    ...profile,
+    metadata: await fileService.resolveProfileMetadata(profile.metadata),
+  };
+}
+
 function normalizeLocalizedContent(
-  payload: Record<string, unknown>,
+  payload: ContentPayload,
   defaults: Partial<ContentDocument> = {},
 ): Omit<ContentDocument, '_id' | 'createdAt' | 'updatedAt'> {
   const title = resolveEnglishContent(getLocalizedField(payload, 'title'));
@@ -49,10 +62,7 @@ function normalizeLocalizedContent(
     href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
     order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
     active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
-    metadata:
-      payload.metadata && typeof payload.metadata === 'object'
-        ? (payload.metadata as Record<string, unknown>)
-        : defaults.metadata || {},
+    metadata: isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {},
     fileName: typeof payload.fileName === 'string' ? payload.fileName : defaults.fileName || '',
     mimeType: typeof payload.mimeType === 'string' ? payload.mimeType : defaults.mimeType || '',
     base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
@@ -64,16 +74,13 @@ export async function listContent(resourceName: ResourceName) {
 }
 
 export async function getProfile() {
-  return profileRepository.findOne({ key: 'main-profile' }) || null;
+  return resolveProfileDocument(await profileRepository.findOne({ key: 'main-profile' }));
 }
 
-export async function upsertProfile(payload: Record<string, unknown>) {
+export async function upsertProfile(payload: ProfilePayload) {
   const existing = await profileRepository.findOne({ key: 'main-profile' });
-  const rawMetadata =
-    payload.metadata && typeof payload.metadata === 'object'
-      ? (payload.metadata as Record<string, unknown>)
-      : existing?.metadata || {};
-  const metadata = fileService.normalizeProfileMetadata(rawMetadata);
+  const rawMetadata = isJsonObject(payload.metadata) ? payload.metadata : existing?.metadata || {};
+  const metadata = await fileService.storeProfileMetadata(rawMetadata);
 
   const base = {
     key: 'main-profile',
@@ -98,10 +105,10 @@ export async function upsertProfile(payload: Record<string, unknown>) {
     await profileRepository.updateById(existing._id!, base);
   }
 
-  return profileRepository.findOne({ key: 'main-profile' });
+  return resolveProfileDocument(await profileRepository.findOne({ key: 'main-profile' }));
 }
 
-export async function createContentItem(resourceName: ResourceName, payload: Record<string, unknown>) {
+export async function createContentItem(resourceName: ResourceName, payload: ContentPayload) {
   const repository = getRepository(resourceName);
   const document = {
     ...normalizeLocalizedContent(payload),
@@ -116,7 +123,7 @@ export async function createContentItem(resourceName: ResourceName, payload: Rec
 export async function updateContentItem(
   resourceName: ResourceName,
   id: string,
-  payload: Record<string, unknown>,
+  payload: ContentPayload,
 ) {
   const repository = getRepository(resourceName);
   const objectId = parseObjectId(id);

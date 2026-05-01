@@ -1,21 +1,20 @@
-import { getDatabase } from '../../config/db.js';
-import type { AnalyticsEventDocument } from '../../types/domain.js';
 import type { Filter } from 'mongodb';
+import { getDatabase } from '../../config/db.js';
+import type { AnalyticsEventDocument } from '../../core/interfaces/domain.js';
+import type { AnalyticsEventPayload, AnalyticsFiltersPayload } from '../../core/interfaces/requests.js';
+import { isJsonObject } from '../../core/interfaces/json.js';
 import { AnalyticsEventsRepository } from './analytics.repository.js';
 
 const analyticsEventsRepository = new AnalyticsEventsRepository();
 
-export async function registerAnalyticsEvent(payload: Record<string, unknown>) {
+export async function registerAnalyticsEvent(payload: AnalyticsEventPayload) {
   const document: AnalyticsEventDocument = {
     type: typeof payload.type === 'string' ? payload.type : 'page_view',
     path: typeof payload.path === 'string' ? payload.path : '/',
     projectId: typeof payload.projectId === 'string' ? payload.projectId : null,
     language: typeof payload.language === 'string' ? payload.language : 'es',
     sessionId: typeof payload.sessionId === 'string' ? payload.sessionId : null,
-    meta:
-      payload.meta && typeof payload.meta === 'object'
-        ? (payload.meta as Record<string, unknown>)
-        : {},
+    meta: isJsonObject(payload.meta) ? payload.meta : {},
     createdAt: new Date(),
   };
 
@@ -23,7 +22,7 @@ export async function registerAnalyticsEvent(payload: Record<string, unknown>) {
   return { tracked: true };
 }
 
-function parseDateFilters(filters: Record<string, unknown>) {
+function parseDateFilters(filters: AnalyticsFiltersPayload) {
   const now = new Date();
   const fromValue = typeof filters.from === 'string' ? filters.from : '';
   const toValue = typeof filters.to === 'string' ? filters.to : '';
@@ -72,7 +71,7 @@ function parseDateFilters(filters: Record<string, unknown>) {
   };
 }
 
-export async function getDashboardMetrics(filters: Record<string, unknown> = {}) {
+export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {}) {
   const database = getDatabase();
   const matchFilter = parseDateFilters(filters) as Filter<AnalyticsEventDocument>;
 

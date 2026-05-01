@@ -4,6 +4,7 @@ import swaggerAutogen from 'swagger-autogen';
 import url from 'url';
 
 import { env } from '../config/env.js';
+import type { JsonObject, JsonValue } from '../core/interfaces/json.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,23 +43,22 @@ const doc = {
 
 const contentResources = ['techSkills', 'experience', 'socialLinks', 'resumes', 'testimonials'] as const;
 
-type SwaggerDocument = {
-  paths?: Record<string, Record<string, unknown>>;
-  [key: string]: unknown;
+type SwaggerOperation = JsonObject;
+type SwaggerPathMap = Record<string, Record<string, SwaggerOperation>>;
+type SwaggerDocument = JsonObject & {
+  paths?: SwaggerPathMap;
 };
 
-type SwaggerOperation = Record<string, unknown>;
-
-function getFirstTag(operation: Record<string, unknown>) {
+function getFirstTag(operation: SwaggerOperation) {
   const tags = operation.tags;
   return Array.isArray(tags) && typeof tags[0] === 'string' ? tags[0] : '';
 }
 
 function addPath(
-  target: Record<string, Record<string, unknown>>,
+  target: SwaggerPathMap,
   fullPath: string,
   method: string,
-  operation: Record<string, unknown>,
+  operation: SwaggerOperation,
 ) {
   if (!target[fullPath]) {
     target[fullPath] = {};
@@ -74,7 +74,7 @@ function formatResourceTag(resourceName: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function applyDynamicTag(routePath: string, operation: Record<string, unknown>) {
+function applyDynamicTag(routePath: string, operation: SwaggerOperation) {
   if (!routePath.startsWith('/api/content/')) {
     return operation;
   }
@@ -90,7 +90,7 @@ function applyDynamicTag(routePath: string, operation: Record<string, unknown>) 
   };
 }
 
-function withJsonRequestBody(operation: SwaggerOperation, schema: Record<string, unknown>) {
+function withJsonRequestBody(operation: SwaggerOperation, schema: JsonObject) {
   return {
     ...operation,
     requestBody: {
@@ -107,10 +107,10 @@ function withJsonRequestBody(operation: SwaggerOperation, schema: Record<string,
 function withJsonResponse(
   operation: SwaggerOperation,
   statusCode: string,
-  schema: Record<string, unknown>,
+  schema: JsonObject,
   description: string,
 ) {
-  const responses = (operation.responses as Record<string, unknown> | undefined) ?? {};
+  const responses = (operation.responses as JsonObject | undefined) ?? {};
 
   return {
     ...operation,
@@ -128,7 +128,7 @@ function withJsonResponse(
   };
 }
 
-function withQueryParameters(operation: SwaggerOperation, parameters: Array<Record<string, unknown>>) {
+function withQueryParameters(operation: SwaggerOperation, parameters: JsonObject[]) {
   return {
     ...operation,
     parameters,
@@ -326,11 +326,11 @@ function normalizeServerUrl(rawUrl: string) {
 
 function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocument {
   const sourcePaths = swaggerDocument.paths ?? {};
-  const normalizedPaths: Record<string, Record<string, unknown>> = {};
+  const normalizedPaths: SwaggerPathMap = {};
 
   for (const [routePath, operations] of Object.entries(sourcePaths)) {
     for (const [method, rawOperation] of Object.entries(operations)) {
-      const operation = rawOperation as Record<string, unknown>;
+      const operation = rawOperation;
       const tag = getFirstTag(operation);
 
       if (tag === 'Projects') {
@@ -399,12 +399,12 @@ export async function ensureSwaggerDocument() {
   fs.writeFileSync(outputFile, JSON.stringify(normalizedDocument, null, 2));
 }
 
-export function readSwaggerDocument() {
+export function readSwaggerDocument(): JsonObject {
   if (!fs.existsSync(outputFile)) {
-    return doc;
+    return doc as JsonObject;
   }
 
-  return JSON.parse(fs.readFileSync(outputFile, 'utf-8'));
+  return JSON.parse(fs.readFileSync(outputFile, 'utf-8')) as JsonObject;
 }
 
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === __filename;
