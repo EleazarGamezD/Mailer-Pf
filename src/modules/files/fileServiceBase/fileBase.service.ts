@@ -1,8 +1,8 @@
 import { env } from '../../../config/env.js';
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
 import type { ImageUploadContract, StoredImageAsset } from '../../../core/interfaces/image.js';
-import { isJsonObject } from '../../../core/interfaces/json.js';
 import type { JsonObject, JsonValue } from '../../../core/interfaces/json.js';
+import { isJsonObject } from '../../../core/interfaces/json.js';
 import { createHttpError } from '../../../utils/http-error.js';
 
 export type FileStorageMode = FileStorageModeEnum;
@@ -122,7 +122,17 @@ export abstract class FileBaseService {
     }
 
     protected buildDbAssetUrl(fileName: string) {
-        return `${env.apiBaseUrl.replace(/\/+$/u, '')}/assets/${encodeURIComponent(fileName)}`;
+        const normalizedFileName = encodeURIComponent(fileName);
+        const normalizedBaseUrl = env.apiBaseUrl.replace(/\/+$/u, '');
+
+        if (
+            env.nodeEnv !== 'production' &&
+            /^(?:https?:\/\/)?localhost(?::\d+)?(?:\/api)?$/u.test(normalizedBaseUrl)
+        ) {
+            return `/api/assets/${normalizedFileName}`;
+        }
+
+        return `${normalizedBaseUrl}/assets/${normalizedFileName}`;
     }
 
     protected normalizeExtension(extension: string | null | undefined) {

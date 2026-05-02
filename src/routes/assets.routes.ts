@@ -1,10 +1,25 @@
 import { Router } from 'express';
-
 import { databaseFileService } from '../modules/files/index.js';
-import { getSingleParam } from '../utils/request-param.js';
 import { asyncHandler } from '../utils/async-handler.js';
+import { getSingleParam } from '../utils/request-param.js';
 
 export const assetsRouter = Router();
+
+assetsRouter.use((_req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Content-Disposition', 'inline');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  next();
+});
+
+assetsRouter.options(
+  '/:fileName',
+  (_req, res) => {
+    res.status(204).end();
+  },
+);
 
 assetsRouter.get(
   '/:fileName',
@@ -19,7 +34,6 @@ assetsRouter.get(
 
     res.setHeader('Content-Type', asset.mimeType);
     res.setHeader('Content-Length', String(asset.size));
-    res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(asset.buffer);
   }),
 );

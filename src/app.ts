@@ -4,8 +4,8 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
-import url from 'url';
 import swaggerUi from 'swagger-ui-express';
+import url from 'url';
 import { env } from './config/env.js';
 import { readSwaggerDocument } from './docs/swagger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
@@ -14,6 +14,7 @@ import { apiRoutes } from './routes/index.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 
 export function createApp() {
   const app = express();
@@ -59,6 +60,7 @@ export function createApp() {
   );
   app.use('/api', apiRoutes);
   app.use('/assets', assetsRouter);
+  app.use('/api/assets', assetsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
