@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import type { ProjectPayload } from '../core/interfaces/requests.js';
+import type { ProjectListQuery, ProjectPayload } from '../core/interfaces/requests.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getSingleParam } from '../utils/request-param.js';
@@ -9,6 +9,7 @@ import {
   deleteProject,
   getProjectByIdOrSlug,
   listProjects,
+  listProjectsPaginated,
   updateProject,
 } from '../modules/projects/projects.service.js';
 
@@ -18,7 +19,29 @@ projectsRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
     // #swagger.tags = ['Projects']
-    res.json(await listProjects());
+    const query = _req.query as ProjectListQuery;
+    const hasPaginationQuery =
+      typeof query.page === 'string' ||
+      typeof query.limit === 'string' ||
+      typeof query.sortBy === 'string' ||
+      typeof query.sortOrder === 'string';
+
+    if (!hasPaginationQuery) {
+      res.json(await listProjects());
+      return;
+    }
+
+    const page = typeof query.page === 'string' ? Number.parseInt(query.page, 10) : undefined;
+    const limit = typeof query.limit === 'string' ? Number.parseInt(query.limit, 10) : undefined;
+
+    res.json(
+      await listProjectsPaginated({
+        page: Number.isFinite(page) ? page : undefined,
+        limit: Number.isFinite(limit) ? limit : undefined,
+        sortBy: typeof query.sortBy === 'string' ? query.sortBy : undefined,
+        sortOrder: query.sortOrder === 'asc' || query.sortOrder === 'desc' ? query.sortOrder : undefined,
+      }),
+    );
   }),
 );
 

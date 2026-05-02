@@ -1,3 +1,4 @@
+import type { IPaginationOptions, IPaginationResponse } from '../../core/interfaces/common.interface.js';
 import type { ProjectDocument } from '../../core/interfaces/domain.js';
 import type { StoredImageAsset } from '../../core/interfaces/image.js';
 import type { ProjectPayload } from '../../core/interfaces/requests.js';
@@ -57,6 +58,21 @@ async function resolveProjectAssets(project: ProjectDocument) {
 export async function listProjects() {
   const projects = await projectsRepository.find({}, { sort: { createdAt: -1 } });
   return Promise.all(projects.map((project) => resolveProjectAssets(project)));
+}
+
+export async function listProjectsPaginated(
+  paginationOptions: IPaginationOptions = {},
+): Promise<IPaginationResponse<Awaited<ReturnType<typeof resolveProjectAssets>>>> {
+  const paginatedProjects = await projectsRepository.findPaginated(
+    {},
+    { sort: { createdAt: -1 } },
+    paginationOptions,
+  );
+
+  return {
+    ...paginatedProjects,
+    data: await Promise.all(paginatedProjects.data.map((project) => resolveProjectAssets(project))),
+  };
 }
 
 export async function getProjectByIdOrSlug(idOrSlug: string) {

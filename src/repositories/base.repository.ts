@@ -1,4 +1,5 @@
 import type { Filter, ObjectId, OptionalUnlessRequiredId } from 'mongodb';
+import type { IPaginationOptions, IPaginationResponse } from '../core/interfaces/common.interface.js';
 
 import { getDatabase } from '../config/db.js';
 
@@ -17,6 +18,32 @@ export class BaseRepository<TSchema extends { _id?: RepositoryDocumentId }> {
 
   find(filter: Filter<TSchema> = {}, options: Parameters<typeof this.collection.find>[1] = {}) {
     return this.collection.find(filter, options).toArray();
+  }
+
+  async findPaginated(
+    filter: Filter<TSchema> = {},
+    options: Parameters<typeof this.collection.find>[1] = {},
+    paginationOptions: IPaginationOptions = {},
+  ): Promise<IPaginationResponse<TSchema>> {
+    const currentPage = Number.isFinite(paginationOptions.page) ? Math.max(1, Math.trunc(paginationOptions.page as number)) : 1;
+    const limit = Number.isFinite(paginationOptions.limit) ? Math.max(1, Math.trunc(paginationOptions.limit as number)) : 10;
+    const skip = (currentPage - 1) * limit;
+
+    const [data, totalItems] = await Promise.all([
+      this.collection.find(filter, { ...options, skip, limit }).toArray() as Promise<TSchema[]>,
+      this.collection.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      data,
+      totalItems,
+      totalPages,
+      currentPage,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1 && totalPages > 0,
+    };
   }
 
   findOne(filter: Filter<TSchema>) {

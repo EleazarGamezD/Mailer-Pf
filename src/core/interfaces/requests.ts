@@ -20,6 +20,13 @@ export interface ProjectPayload extends JsonObject {
   publishedAt?: string | null;
 }
 
+export interface ProjectListQuery extends JsonObject {
+  page?: number | string;
+  limit?: number | string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface ContentPayload extends JsonObject {
   key?: string;
   slug?: string;
