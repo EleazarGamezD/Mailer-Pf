@@ -7,6 +7,12 @@ export interface LocalizedText {
   en: string;
 }
 
+export interface ExperiencePeriod {
+  start: string;
+  end: string | null;
+  current: boolean;
+}
+
 export interface BaseEntity extends Document {
   _id?: ObjectId;
   createdAt: Date;
@@ -41,6 +47,7 @@ export interface ContentDocument extends BaseEntity {
   description: LocalizedText;
   label: LocalizedText;
   value: JsonValue;
+  period?: ExperiencePeriod;
   icon: JsonValue | null;
   href: string;
   order: number;

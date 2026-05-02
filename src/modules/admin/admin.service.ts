@@ -109,12 +109,21 @@ export async function seedInitialContent() {
     ['freelance', '2023 - Actual', 'Freelance', 'Desarrollador Fullstack en proyectos personalizados.', 'Fullstack developer for custom projects.'],
     ['postouch-colombia', '2018 - 2023', 'PosTouch Colombia S.A.S', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Technical department lead, support for fiscal and accounting systems.'],
     ['retail-pos-systems', '2013 - 2018', 'Retail Pos Systems Tec. C.A.', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Technical department lead, support for fiscal and accounting systems.'],
-  ].map(([slug, year, company, descriptionEs, descriptionEn], index) => ({
+  ].map(([slug, year, company, descriptionEs, descriptionEn], index) => {
+    const [start, endLabel] = year.split(/\s*-\s*/u);
+    const isCurrent = endLabel === 'Actual';
+
+    return ({
     slug,
     label: { es: company, en: company },
     title: { es: company, en: company },
     description: { es: descriptionEs, en: descriptionEn },
     value: year,
+    period: {
+      start,
+      end: isCurrent ? null : endLabel,
+      current: isCurrent,
+    },
     icon: null,
     href: '',
     order: index + 1,
@@ -123,7 +132,7 @@ export async function seedInitialContent() {
     fileName: '',
     mimeType: '',
     base64: '',
-  }));
+  })});
 
   const testimonials = [
     ['arian-valdivieso', 'Arian Valdivieso', 'COO', 'Meraki Office', 'Eleazar demostró ser un miembro excepcional del equipo, destacándose por su naturaleza proactiva y sus notables habilidades de adaptación. Su compromiso con los proyectos y entusiasmo por aprender contribuyó significativamente a nuestro éxito en Meraki.', 'Eleazar proved to be an exceptional team member, standing out for his proactive nature and remarkable adaptive abilities. His commitment to projects and eagerness to learn significantly contributed to our success at Meraki.'],

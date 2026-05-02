@@ -1,6 +1,6 @@
 import type { JsonObject, JsonValue } from './json.js';
 import type { ImageUploadContract, StoredImageAsset } from './image.js';
-import type { LocalizedText } from './domain.js';
+import type { ExperiencePeriod, LocalizedText } from './domain.js';
 
 export type ImageReferenceInput = string | ImageUploadContract | StoredImageAsset | null;
 export type ImageReferenceCollectionInput = ImageReferenceInput[];
@@ -43,6 +43,7 @@ export interface ContentPayload extends JsonObject {
   description?: Partial<LocalizedText>;
   label?: Partial<LocalizedText>;
   value?: JsonValue;
+  period?: Partial<ExperiencePeriod>;
   icon?: string | ImageUploadContract | StoredImageAsset | null;
   href?: string;
   order?: number | string;

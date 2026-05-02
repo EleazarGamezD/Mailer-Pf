@@ -1,5 +1,5 @@
 import type { IPaginationOptions, IPaginationResponse } from '../../core/interfaces/common.interface.js';
-import type { ContentDocument, ProfileDocument } from '../../core/interfaces/domain.js';
+import type { ContentDocument, ExperiencePeriod, ProfileDocument } from '../../core/interfaces/domain.js';
 import type { ContentPayload, ProfilePayload } from '../../core/interfaces/requests.js';
 import { isJsonObject } from '../../core/interfaces/json.js';
 
@@ -30,9 +30,87 @@ function getRepository(resourceName: ResourceName) {
   return collectionMap[resourceName];
 }
 
+function formatExperiencePeriod(period: ExperiencePeriod | null | undefined) {
+  if (!period?.start) {
+    return '';
+  }
+
+  if (period.current || !period.end) {
+    return `${period.start} - Actual`;
+  }
+
+  return `${period.start} - ${period.end}`;
+}
+
+function parseLegacyExperiencePeriod(value: unknown): ExperiencePeriod | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const [rawStart, rawEnd] = normalized.split(/\s*-\s*/u);
+  const start = rawStart?.trim();
+  const end = rawEnd?.trim();
+
+  if (!start) {
+    return undefined;
+  }
+
+  if (!end || /^actual$/iu.test(end)) {
+    return {
+      start,
+      end: null,
+      current: true,
+    };
+  }
+
+  return {
+    start,
+    end,
+    current: false,
+  };
+}
+
+function normalizeExperiencePeriod(
+  payloadPeriod: unknown,
+  defaultPeriod: ExperiencePeriod | undefined,
+  legacyValue?: unknown,
+) {
+  if (typeof payloadPeriod === 'object' && payloadPeriod !== null && !Array.isArray(payloadPeriod)) {
+    const typedPeriod = payloadPeriod as Partial<ExperiencePeriod>;
+    const start = typeof typedPeriod.start === 'string' ? typedPeriod.start.trim() : '';
+    const rawEnd = typeof typedPeriod.end === 'string' ? typedPeriod.end.trim() : '';
+    const current = typedPeriod.current === true || rawEnd === '';
+
+    if (start) {
+      return {
+        start,
+        end: current ? null : rawEnd || null,
+        current,
+      } satisfies ExperiencePeriod;
+    }
+  }
+
+  return defaultPeriod ?? parseLegacyExperiencePeriod(legacyValue);
+}
+
 async function resolveContentItem(resourceName: ResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
+  }
+
+  if (resourceName === 'experience') {
+    const period = normalizeExperiencePeriod(item.period, item.period, item.value ?? item.metadata?.year);
+
+    return {
+      ...item,
+      period,
+      value: formatExperiencePeriod(period) || item.value,
+    };
   }
 
   if (resourceName !== 'techSkills') {
@@ -120,6 +198,10 @@ async function normalizeLocalizedContent(
     description,
     label,
     value: payload.value ?? defaults.value ?? null,
+    period:
+      resourceName === 'experience'
+        ? normalizeExperiencePeriod(payload.period, defaults.period, payload.value ?? defaults.value ?? defaults.metadata?.year)
+        : defaults.period,
     icon: payload.icon ?? defaults.icon ?? null,
     href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
     order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
@@ -191,8 +273,13 @@ export async function upsertProfile(payload: ProfilePayload) {
 
 export async function createContentItem(resourceName: ResourceName, payload: ContentPayload) {
   const repository = getRepository(resourceName);
+  const normalizedDocument = await normalizeLocalizedContent(resourceName, payload);
   const document = {
-    ...(await normalizeLocalizedContent(resourceName, payload)),
+    ...normalizedDocument,
+    value:
+      resourceName === 'experience'
+        ? formatExperiencePeriod(normalizedDocument.period ?? null)
+        : normalizedDocument.value,
     createdAt: new Date(),
     updatedAt: new Date(),
   } as ContentDocument;
@@ -214,8 +301,13 @@ export async function updateContentItem(
     throw createHttpError(404, 'Content item not found.');
   }
 
+  const normalizedDocument = await normalizeLocalizedContent(resourceName, payload, existing);
   const updated = await repository.updateById(objectId, {
-    ...(await normalizeLocalizedContent(resourceName, payload, existing)),
+    ...normalizedDocument,
+    value:
+      resourceName === 'experience'
+        ? formatExperiencePeriod(normalizedDocument.period ?? null)
+        : normalizedDocument.value,
     updatedAt: new Date(),
   });
 
