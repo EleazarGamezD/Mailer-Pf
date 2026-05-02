@@ -1,3 +1,4 @@
+import type { IPaginationOptions, IPaginationResponse } from '../../core/interfaces/common.interface.js';
 import type { ContentDocument, ProfileDocument } from '../../core/interfaces/domain.js';
 import type { ContentPayload, ProfilePayload } from '../../core/interfaces/requests.js';
 import { isJsonObject } from '../../core/interfaces/json.js';
@@ -9,6 +10,7 @@ import {
 } from '../../utils/content.helpers.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { parseObjectId } from '../../utils/object-id.js';
+import { buildUniqueTechSkillSlug, normalizeTechSkillLabel } from '../../utils/skill.helpers.js';
 import { fileService } from '../files/index.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
@@ -28,6 +30,28 @@ function getRepository(resourceName: ResourceName) {
   return collectionMap[resourceName];
 }
 
+async function resolveContentItem(resourceName: ResourceName, item: ContentDocument | null) {
+  if (!item) {
+    return null;
+  }
+
+  if (resourceName !== 'techSkills') {
+    return item;
+  }
+
+  const resolvedIcon = typeof item.icon === 'string' ? await fileService.resolveImageAsset(item.icon) : null;
+
+  return {
+    ...item,
+    icon:
+      resolvedIcon == null
+        ? null
+        : typeof resolvedIcon === 'string'
+          ? resolvedIcon
+          : resolvedIcon.url ?? null,
+  };
+}
+
 async function resolveProfileDocument(profile: ProfileDocument | null) {
   if (!profile) {
     return null;
@@ -39,10 +63,48 @@ async function resolveProfileDocument(profile: ProfileDocument | null) {
   };
 }
 
-function normalizeLocalizedContent(
+async function normalizeLocalizedContent(
+  resourceName: ResourceName,
   payload: ContentPayload,
   defaults: Partial<ContentDocument> = {},
-): Omit<ContentDocument, '_id' | 'createdAt' | 'updatedAt'> {
+): Promise<Omit<ContentDocument, '_id' | 'createdAt' | 'updatedAt'>> {
+  if (resourceName === 'techSkills') {
+    const rawLabel =
+      getLocalizedField(payload, 'label').es ||
+      getLocalizedField(payload, 'label').en ||
+      getLocalizedField(payload, 'title').es ||
+      getLocalizedField(payload, 'title').en ||
+      (typeof payload.value === 'string' ? payload.value.trim() : '');
+
+    if (!rawLabel) {
+      throw createHttpError(400, 'Skill label is required.');
+    }
+
+    const label = normalizeTechSkillLabel(rawLabel);
+    const slug = await buildUniqueTechSkillSlug(
+      label,
+      async (candidate) => getRepository(resourceName).findOne({ slug: candidate }),
+      defaults._id ? String(defaults._id) : undefined,
+    );
+
+    return {
+      key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
+      slug,
+      title: label,
+      description: { es: '', en: '' },
+      label,
+      value: label.es,
+      icon: await fileService.normalizeImageAsset(payload.icon ?? null, 'techSkills.icon'),
+      href: '',
+      order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
+      active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
+      metadata: isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {},
+      fileName: '',
+      mimeType: '',
+      base64: '',
+    };
+  }
+
   const title = resolveEnglishContent(getLocalizedField(payload, 'title'));
   const description = resolveEnglishContent(getLocalizedField(payload, 'description'));
   const label = resolveEnglishContent(getLocalizedField(payload, 'label'));
@@ -70,7 +132,26 @@ function normalizeLocalizedContent(
 }
 
 export async function listContent(resourceName: ResourceName) {
-  return getRepository(resourceName).find({}, { sort: { order: 1, createdAt: -1 } });
+  const items = await getRepository(resourceName).find({}, { sort: { order: 1, createdAt: -1 } });
+  return Promise.all(items.map((item) => resolveContentItem(resourceName, item)));
+}
+
+export async function listContentPaginated(
+  resourceName: ResourceName,
+  paginationOptions: IPaginationOptions = {},
+): Promise<IPaginationResponse<NonNullable<Awaited<ReturnType<typeof resolveContentItem>>>>> {
+  const paginatedItems = await getRepository(resourceName).findPaginated(
+    {},
+    { sort: { order: 1, createdAt: -1 } },
+    paginationOptions,
+  );
+
+  return {
+    ...paginatedItems,
+    data: (await Promise.all(paginatedItems.data.map((item) => resolveContentItem(resourceName, item)))).filter(
+      (item): item is NonNullable<Awaited<ReturnType<typeof resolveContentItem>>> => item !== null,
+    ),
+  };
 }
 
 export async function getProfile() {
@@ -111,13 +192,13 @@ export async function upsertProfile(payload: ProfilePayload) {
 export async function createContentItem(resourceName: ResourceName, payload: ContentPayload) {
   const repository = getRepository(resourceName);
   const document = {
-    ...normalizeLocalizedContent(payload),
+    ...(await normalizeLocalizedContent(resourceName, payload)),
     createdAt: new Date(),
     updatedAt: new Date(),
   } as ContentDocument;
 
   await repository.create(document);
-  return repository.findOne({ slug: document.slug });
+  return resolveContentItem(resourceName, await repository.findOne({ slug: document.slug }));
 }
 
 export async function updateContentItem(
@@ -134,11 +215,11 @@ export async function updateContentItem(
   }
 
   const updated = await repository.updateById(objectId, {
-    ...normalizeLocalizedContent(payload, existing),
+    ...(await normalizeLocalizedContent(resourceName, payload, existing)),
     updatedAt: new Date(),
   });
 
-  return updated;
+  return resolveContentItem(resourceName, updated);
 }
 
 export async function deleteContentItem(resourceName: ResourceName, id: string) {

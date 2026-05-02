@@ -11,6 +11,8 @@ export interface ProjectPayload extends JsonObject {
   summary?: Partial<LocalizedText>;
   description?: Partial<LocalizedText>;
   stack?: string[];
+  skillIds?: string[];
+  primarySkillId?: string | null;
   images?: ImageReferenceCollectionInput;
   coverImage?: ImageReferenceInput;
   projectLink?: string;
@@ -27,6 +29,13 @@ export interface ProjectListQuery extends JsonObject {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface ContentListQuery extends JsonObject {
+  page?: number | string;
+  limit?: number | string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface ContentPayload extends JsonObject {
   key?: string;
   slug?: string;
@@ -34,7 +43,7 @@ export interface ContentPayload extends JsonObject {
   description?: Partial<LocalizedText>;
   label?: Partial<LocalizedText>;
   value?: JsonValue;
-  icon?: JsonValue | null;
+  icon?: string | ImageUploadContract | StoredImageAsset | null;
   href?: string;
   order?: number | string;
   active?: boolean;

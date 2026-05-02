@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
-import type { ContentPayload, ProfilePayload } from '../core/interfaces/requests.js';
+import type { ContentListQuery, ContentPayload, ProfilePayload } from '../core/interfaces/requests.js';
+import type { IPaginationOptions } from '../core/interfaces/common.interface.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { getSingleParam } from '../utils/request-param.js';
@@ -9,6 +10,7 @@ import {
   deleteContentItem,
   getProfile,
   listContent,
+  listContentPaginated,
   updateContentItem,
   upsertProfile,
 } from '../modules/content/content.service.js';
@@ -38,9 +40,16 @@ const resourceNames = ['techSkills', 'experience', 'socialLinks', 'resumes', 'te
 for (const resourceName of resourceNames) {
   contentRouter.get(
     `/${resourceName}`,
-    asyncHandler(async (_req, res) => {
+    asyncHandler(async (req, res) => {
       // #swagger.tags = ['Content']
-      res.json(await listContent(resourceName));
+      const paginationOptions = parsePaginationQuery(req.query as ContentListQuery);
+
+      if (!hasPaginationQuery(paginationOptions)) {
+        res.json(await listContent(resourceName));
+        return;
+      }
+
+      res.json(await listContentPaginated(resourceName, paginationOptions));
     }),
   );
 
@@ -79,4 +88,20 @@ for (const resourceName of resourceNames) {
       res.json(await deleteContentItem(resourceName, getSingleParam(req.params.id, 'id')));
     }),
   );
+}
+
+function parsePaginationQuery(query: ContentListQuery): IPaginationOptions {
+  const page = Number(query.page);
+  const limit = Number(query.limit);
+
+  return {
+    page: Number.isFinite(page) && page > 0 ? page : undefined,
+    limit: Number.isFinite(limit) && limit > 0 ? limit : undefined,
+    sortBy: typeof query.sortBy === 'string' && query.sortBy.trim() ? query.sortBy.trim() : undefined,
+    sortOrder: query.sortOrder === 'asc' || query.sortOrder === 'desc' ? query.sortOrder : undefined,
+  };
+}
+
+function hasPaginationQuery(options: IPaginationOptions): boolean {
+  return Boolean(options.page || options.limit || options.sortBy || options.sortOrder);
 }

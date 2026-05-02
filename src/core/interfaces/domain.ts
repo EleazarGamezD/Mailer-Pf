@@ -23,6 +23,8 @@ export interface ProjectDocument extends BaseEntity {
   summary: LocalizedText;
   description: LocalizedText;
   stack: string[];
+  skillIds: string[];
+  primarySkillId: string | null;
   images: string[];
   coverImage: string | null;
   projectLink: string;
