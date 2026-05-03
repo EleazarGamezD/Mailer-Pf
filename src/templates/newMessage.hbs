@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuevo mensaje del portfolio</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f1ea;font-family:Arial,sans-serif;color:#181818;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f1ea;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border-radius:24px;overflow:hidden;">
+          <tr>
+            <td style="padding:40px;background:linear-gradient(135deg,#181818 0%,#2e2e2e 100%);color:#ffffff;">
+              <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#f0b37e;">Portfolio Dynamic</p>
+              <h1 style="margin:0;font-size:32px;line-height:1.1;">Nuevo mensaje recibido</h1>
+              <p style="margin:16px 0 0;font-size:16px;line-height:1.7;color:#f3f3f3;">Alguien llenó el formulario de contacto de tu portfolio y dejó la siguiente información.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;border-spacing:0 14px;">
+                <tr>
+                  <td style="padding:16px 18px;background:#f8f5ef;border-radius:16px;">
+                    <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:#8d7c6c;">Nombre</p>
+                    <p style="margin:0;font-size:16px;font-weight:700;">{{name}}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 18px;background:#f8f5ef;border-radius:16px;">
+                    <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:#8d7c6c;">Correo</p>
+                    <p style="margin:0;font-size:16px;font-weight:700;">{{contactEmail}}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 18px;background:#f8f5ef;border-radius:16px;">
+                    <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:#8d7c6c;">Teléfono</p>
+                    <p style="margin:0;font-size:16px;font-weight:700;">{{phone}}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 18px;background:#f8f5ef;border-radius:16px;">
+                    <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:#8d7c6c;">Asunto</p>
+                    <p style="margin:0;font-size:16px;font-weight:700;">{{subject}}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:18px;background:#fff4ec;border:1px solid #f0d7c8;border-radius:18px;">
+                    <p style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:#b14b21;">Mensaje</p>
+                    <p style="margin:0;font-size:15px;line-height:1.8;color:#433d36;white-space:pre-line;">{{message}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px;background:#faf8f3;border-top:1px solid #eee4d7;">
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#74675b;">Este correo fue generado automáticamente desde el formulario de contacto del portfolio. {{year}}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

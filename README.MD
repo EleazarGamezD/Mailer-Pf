@@ -1,50 +1,60 @@
-# Mailer-Portfolio
+# Portfolio Dynamic API
 
-## Descripción
+Backend Express para el portfolio dinámico. Esta app ahora centraliza:
 
-Este proyecto, llamado Mailer-Portfolio, es una aplicación basada en Express.js que proporciona funcionalidades de correo electrónico y otros aspectos relacionados con el portafolio. El objetivo principal es permitir a los usuarios enviar mensajes desde un formulario de contacto.
+- contenido editable del portfolio
+- envío de correos de contacto
+- verificación de captcha
+- analíticas para dashboard
+- documentación Swagger
 
-## Instalación
+## Scripts
 
-1. **Clona el repositorio:**
+```bash
+npm install
+npm run docs:generate
+npm run dev
+npm start
+```
 
-   ```bash
-   git clone https://github.com/EleazarGamezD/Mailer-Pf.git
+## Variables de entorno
 
-2. **Instala las Dependencias:**
+Usa `.env.example` como plantilla.
 
-   ```bash
-   npm install
+Variables principales:
 
+```bash
+NODE_ENV=development
+APP_PORT=3000
+API_BASE_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:4200
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB_NAME=Porfolio
+ADMIN_API_KEY=...
+```
 
-3. **Renombra el Archivo .env_template:**
+Variables de correo:
 
-   ```bash
-   GMAIL_USER=usuario_Gmail
-   GMAIL_PASSWORD=Clave_Gmail  # (Esta debe ser la clave para Apps)
-   FROM=Email_que_envía
-   TO=Email_que_recibe  # (si se quiere hardcodear)
-   APP_PORT=3000  # Puerto de la App por defecto
-   RECAPTCHA_SECRET_KEY=Recaptcha_secret # clave secreta del recaptcha v3 
-4. **Modo de Desarrollo:**
+```bash
+FROM=
+TO=
+GMAIL_USER=
+GMAIL_PASSWORD=
+RECAPTCHA_SECRET_KEY=
+```
 
-   ```bash
-      npm run dev
+## Endpoints clave
 
-5. **Modo de Producción:**
+- `GET /health`
+- `GET /docs`
+- `GET /api/projects`
+- `GET /api/content/profile`
+- `POST /api/contact/send`
+- `POST /api/analytics/event`
 
-   ```bash
-      npm start
+Todos los `POST`, `PUT`, `PATCH` y `DELETE` administrativos usan `x-api-key`.
 
-6. **Tecnologías Utilizadas:**
+## Documentación interna
 
-   ```bash
-      Node.js
-      Express.js
-      Nodemailer
-      Dotenv
-      Nodemon
-
-**Autor**
-
-Elezar Gamez
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- [docs/CONTINUATION.md](./docs/CONTINUATION.md)
