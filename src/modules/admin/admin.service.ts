@@ -125,9 +125,51 @@ startxref
   return Buffer.from(pdf, 'utf-8').toString('base64');
 }
 
-export async function seedInitialContent() {
-  const db = getDatabase();
-  const now = new Date();
+type SeedPreset = 'starter' | 'demo-personal';
+
+interface SeedAssets {
+  angularIcon: string;
+  bootstrapIcon: string;
+  nodeExpressIcon: string;
+  dockerIcon: string;
+  nestJsIcon: string;
+  postmanIcon: string;
+  typescriptIcon: string;
+  apiIcon: string;
+  cloudIcon: string;
+  multitaskIcon: string;
+  serverIcon: string;
+  webDevelopmentIcon: string;
+  rainDigits: string;
+  webBackground: string;
+  cvHeroBackground: string;
+  cvSectionBackground: string;
+  heroKeyboardBackground: string;
+  heroWallpaperBackground: string;
+  starterHeaderLogo: string;
+  starterAboutPrimaryImage: string;
+  starterAboutSecondaryImage: string;
+  starterFooterCenterImage: string;
+  heroSlideFallbackImage: string;
+  projectFallbackImage: string;
+  projectPlaceholder: string;
+  personalHeaderLogo: string;
+  personalAboutPrimaryImage: string;
+  personalAboutSecondaryImage: string;
+  personalFooterCenterImage: string;
+}
+
+interface SeedBundle {
+  projects: Record<string, unknown>[];
+  techSkills: Record<string, unknown>[];
+  experience: Record<string, unknown>[];
+  testimonials: Record<string, unknown>[];
+  socialLinks: Record<string, unknown>[];
+  resumes: Record<string, unknown>[];
+  profile: Record<string, unknown>;
+}
+
+async function loadSeedAssets(): Promise<SeedAssets> {
   const [
     angularIcon,
     bootstrapIcon,
@@ -147,13 +189,17 @@ export async function seedInitialContent() {
     cvSectionBackground,
     heroKeyboardBackground,
     heroWallpaperBackground,
-    headerLogo,
-    aboutPrimaryImage,
-    aboutSecondaryImage,
-    footerCenterImage,
+    starterHeaderLogo,
+    starterAboutPrimaryImage,
+    starterAboutSecondaryImage,
+    starterFooterCenterImage,
     heroSlideFallbackImage,
     projectFallbackImage,
     projectPlaceholder,
+    personalHeaderLogo,
+    personalAboutPrimaryImage,
+    personalAboutSecondaryImage,
+    personalFooterCenterImage,
   ] = await Promise.all([
     uploadSeedAsset('shared/svg/angular-svgrepo-com.svg'),
     uploadSeedAsset('shared/svg/bootstrap-svgrepo-com.svg'),
@@ -180,8 +226,161 @@ export async function seedInitialContent() {
     uploadSeedAsset('shared/backgrounds/bg-1.webp'),
     uploadSeedAsset('shared/backgrounds/desktop-v3.webp'),
     uploadSvgPlaceholder('Project Placeholder', 1200, 900),
+    uploadSeedAsset('archive/home/logo-yo-bh.webp'),
+    uploadSeedAsset('archive/home/PortfolioFoto1.jpg'),
+    uploadSeedAsset('archive/home/profile_v2.jpg'),
+    uploadSeedAsset('archive/home/FOOTER_CENTER_IMG.png'),
   ]);
 
+  return {
+    angularIcon,
+    bootstrapIcon,
+    nodeExpressIcon,
+    dockerIcon,
+    nestJsIcon,
+    postmanIcon,
+    typescriptIcon,
+    apiIcon,
+    cloudIcon,
+    multitaskIcon,
+    serverIcon,
+    webDevelopmentIcon,
+    rainDigits,
+    webBackground,
+    cvHeroBackground,
+    cvSectionBackground,
+    heroKeyboardBackground,
+    heroWallpaperBackground,
+    starterHeaderLogo,
+    starterAboutPrimaryImage,
+    starterAboutSecondaryImage,
+    starterFooterCenterImage,
+    heroSlideFallbackImage,
+    projectFallbackImage,
+    projectPlaceholder,
+    personalHeaderLogo,
+    personalAboutPrimaryImage,
+    personalAboutSecondaryImage,
+    personalFooterCenterImage,
+  };
+}
+
+function buildTechSkills(assets: SeedAssets) {
+  return [
+    ['angular', 'Angular', assets.angularIcon],
+    ['bootstrap', 'Bootstrap', assets.bootstrapIcon],
+    ['node-express', 'Node.js - Express', assets.nodeExpressIcon],
+    ['docker', 'Docker', assets.dockerIcon],
+    ['nestjs', 'Nest.js', assets.nestJsIcon],
+    ['postman', 'Postman', assets.postmanIcon],
+    ['typescript', 'TypeScript', assets.typescriptIcon],
+  ].map(([slug, name, icon], index) => ({
+    slug,
+    label: { es: name, en: name },
+    title: { es: name, en: name },
+    description: { es: '', en: '' },
+    value: name,
+    icon,
+    href: '',
+    order: index + 1,
+    active: true,
+    metadata: {},
+    fileName: '',
+    mimeType: '',
+    base64: '',
+  }));
+}
+
+function buildExperience(
+  items: Array<[string, string, string, string, string]>,
+) {
+  return items.map(([slug, year, company, descriptionEs, descriptionEn], index) => {
+    const [start, endLabel] = year.split(/\s*-\s*/u);
+    const isCurrent = endLabel === 'Actual';
+
+    return {
+      slug,
+      label: { es: company, en: company },
+      title: { es: company, en: company },
+      description: { es: descriptionEs, en: descriptionEn },
+      value: year,
+      period: {
+        start,
+        end: isCurrent ? null : endLabel,
+        current: isCurrent,
+      },
+      icon: null,
+      href: '',
+      order: index + 1,
+      active: true,
+      metadata: { year },
+      fileName: '',
+      mimeType: '',
+      base64: '',
+    };
+  });
+}
+
+function buildTestimonials(
+  items: Array<[string, string, string, string, string, string]>,
+) {
+  return items.map(([slug, name, position, company, testimonialEs, testimonialEn], index) => ({
+    slug,
+    label: { es: name, en: name },
+    title: { es: `${name} - ${position}`, en: `${name} - ${position}` },
+    description: { es: testimonialEs, en: testimonialEn },
+    value: name,
+    icon: null,
+    href: '',
+    order: index + 1,
+    active: true,
+    metadata: { position, company, name },
+    fileName: '',
+    mimeType: '',
+    base64: '',
+  }));
+}
+
+function buildSocialLinks(items: Array<[string, string, string, string]>) {
+  return items.map(([slug, name, href, icon], index) => ({
+    slug,
+    label: { es: name, en: name },
+    title: { es: name, en: name },
+    description: { es: '', en: '' },
+    value: href,
+    icon,
+    href,
+    order: index + 1,
+    active: true,
+    metadata: {},
+    fileName: '',
+    mimeType: '',
+    base64: '',
+  }));
+}
+
+function buildResumes(items: Array<[string, string, string, string, string]>) {
+  return items.map(([slug, labelEs, labelEn, fileName, language], index) => ({
+    slug,
+    label: { es: labelEs, en: labelEn },
+    title: { es: labelEs, en: labelEn },
+    description: {
+      es: 'Documento base para hoja de vida descargable',
+      en: 'Starter document for downloadable resume',
+    },
+    value: fileName,
+    icon: null,
+    href: '',
+    order: index + 1,
+    active: true,
+    metadata: { language },
+    fileName,
+    mimeType: 'application/pdf',
+    base64: createResumePdfBase64(language === 'es' ? labelEs : labelEn),
+  }));
+}
+
+function buildStarterSeedBundle(assets: SeedAssets): SeedBundle {
   const projects = [
     {
       slug: 'starter-platform',
@@ -195,8 +394,8 @@ export async function seedInitialContent() {
         en: 'Seed project with frontend and backend structure designed as a configurable professional portfolio starting point.',
       },
       stack: ['Angular', 'Node.js', 'Express', 'MongoDB'],
-      images: [projectPlaceholder],
-      coverImage: projectPlaceholder,
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
       projectLink: 'https://example.com/starter-platform',
       codeLink: 'https://github.com/example/starter-platform',
       featured: true,
@@ -215,8 +414,8 @@ export async function seedInitialContent() {
         en: 'Architecture example for catalog, cart, and authentication, intended as a reference for modern business solutions.',
       },
       stack: ['NestJS', 'TypeScript', 'PostgreSQL', 'JWT'],
-      images: [projectPlaceholder],
-      coverImage: projectPlaceholder,
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
       projectLink: 'https://example.com/commerce-api',
       codeLink: 'https://github.com/example/commerce-api',
       featured: true,
@@ -235,8 +434,8 @@ export async function seedInitialContent() {
         en: 'Showcases an administrative experience focused on visual configuration, content ordering, and maintenance flows over dynamic data.',
       },
       stack: ['Angular', 'Express', 'MongoDB', 'CoreUI'],
-      images: [projectPlaceholder],
-      coverImage: projectPlaceholder,
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
       projectLink: 'https://example.com/ops-dashboard',
       codeLink: 'https://github.com/example/ops-dashboard',
       featured: true,
@@ -245,187 +444,265 @@ export async function seedInitialContent() {
     },
   ];
 
-  const techSkills = [
-    ['angular', 'Angular', angularIcon],
-    ['bootstrap', 'Bootstrap', bootstrapIcon],
-    ['node-express', 'Node.js - Express', nodeExpressIcon],
-    ['docker', 'Docker', dockerIcon],
-    ['nestjs', 'Nest.js', nestJsIcon],
-    ['postman', 'Postman', postmanIcon],
-    ['typescript', 'TypeScript', typescriptIcon],
-  ].map(([slug, name, icon], index) => ({
-    slug,
-    label: { es: name, en: name },
-    title: { es: name, en: name },
-    description: { es: '', en: '' },
-    value: name,
-    icon,
-    href: '',
-    order: index + 1,
-    active: true,
-    metadata: {},
-    fileName: '',
-    mimeType: '',
-    base64: '',
-  }));
-
-  const experience = [
-    ['alpha-studio', '2025 - Actual', 'Alpha Studio', 'Rol de ejemplo para experiencias laborales configurables.', 'Example role for configurable work experiences.'],
-    ['north-hub', '2024 - 2025', 'North Hub', 'Segunda experiencia base con descripcion editable desde el panel.', 'Second base experience with editable description from the dashboard.'],
-    ['independent', '2023 - Actual', 'Independent Projects', 'Trabajo independiente en productos digitales y soporte tecnico.', 'Independent work across digital products and technical support.'],
-    ['solid-ops', '2018 - 2023', 'Solid Ops', 'Experiencia senior orientada a coordinacion tecnica y continuidad operativa.', 'Senior experience focused on technical coordination and operational continuity.'],
-    ['legacy-systems', '2013 - 2018', 'Legacy Systems', 'Experiencia historica para poblar la trayectoria profesional inicial.', 'Historic experience to populate the initial professional timeline.'],
-  ].map(([slug, year, company, descriptionEs, descriptionEn], index) => {
-    const [start, endLabel] = year.split(/\s*-\s*/u);
-    const isCurrent = endLabel === 'Actual';
-
-    return ({
-    slug,
-    label: { es: company, en: company },
-    title: { es: company, en: company },
-    description: { es: descriptionEs, en: descriptionEn },
-    value: year,
-    period: {
-      start,
-      end: isCurrent ? null : endLabel,
-      current: isCurrent,
-    },
-    icon: null,
-    href: '',
-    order: index + 1,
-    active: true,
-    metadata: { year },
-    fileName: '',
-    mimeType: '',
-    base64: '',
-  })});
-
-  const testimonials = [
-    ['client-one', 'Client One', 'Product Lead', 'Acme Corp', 'Este espacio muestra un testimonio de ejemplo listo para ser reemplazado con contenido real.', 'This area displays a starter testimonial ready to be replaced with real content.'],
-    ['client-two', 'Client Two', 'Engineering Manager', 'North Hub', 'La estructura soporta testimonios bilingues y estados activos controlados desde el panel.', 'The structure supports bilingual testimonials and active states managed from the dashboard.'],
-    ['client-three', 'Client Three', 'Founder', 'Studio Zero', 'Utiliza este item como referencia para cargar citas de clientes o colegas.', 'Use this item as a reference for loading quotes from clients or colleagues.'],
-  ].map(([slug, name, position, company, testimonialEs, testimonialEn], index) => ({
-    slug,
-    label: { es: name, en: name },
-    title: { es: `${name} - ${position}`, en: `${name} - ${position}` },
-    description: { es: testimonialEs, en: testimonialEn },
-    value: name,
-    icon: null,
-    href: '',
-    order: index + 1,
-    active: true,
-    metadata: { position, company, name },
-    fileName: '',
-    mimeType: '',
-    base64: '',
-  }));
-
-  const socialLinks = [
-    ['github', 'GitHub', 'https://github.com/', 'fa-brands fa-github'],
-    ['linkedin', 'LinkedIn', 'https://www.linkedin.com/', 'fa-brands fa-linkedin'],
-    ['x', 'X', 'https://x.com/', 'fa-brands fa-x-twitter'],
-  ].map(([slug, name, href, icon], index) => ({
-    slug,
-    label: { es: name, en: name },
-    title: { es: name, en: name },
-    description: { es: '', en: '' },
-    value: href,
-    icon,
-    href,
-    order: index + 1,
-    active: true,
-    metadata: {},
-    fileName: '',
-    mimeType: '',
-    base64: '',
-  }));
-
-  const resumes = [
-    ['portfolio-owner-cv-es', 'Portfolio Owner - CV Español', 'portfolio-owner-cv-es.pdf', 'application/pdf'],
-    ['portfolio-owner-cv-en', 'Portfolio Owner - CV English', 'portfolio-owner-cv-en.pdf', 'application/pdf'],
-  ].map(([slug, title, fileName, mimeType], index) => ({
-    slug,
-    label: { es: title.includes('Español') ? title : 'Portfolio Owner - CV Español', en: title.includes('English') ? title : 'Portfolio Owner - CV English' },
-    title: { es: title.includes('Español') ? title : 'Portfolio Owner - CV Español', en: title.includes('English') ? title : 'Portfolio Owner - CV English' },
-    description: { es: 'Documento base para hoja de vida descargable', en: 'Starter document for downloadable resume' },
-    value: fileName,
-    icon: null,
-    href: '',
-    order: index + 1,
-    active: true,
-    metadata: { language: slug.includes('es') ? 'es' : 'en' },
-    fileName,
-    mimeType,
-    base64: createResumePdfBase64(title),
-  }));
-
-  const profile = {
-    key: ProfileKeyEnum.MAIN_PROFILE,
-    slug: ProfileKeyEnum.MAIN_PROFILE,
-    label: { es: 'Portfolio Owner', en: 'Portfolio Owner' },
-    title: {
-      es: 'Entre interfaz y logica: un portfolio listo para personalizar.',
-      en: 'Between interface and logic: a portfolio ready to customize.',
-    },
-    description: {
-      es: 'Este perfil semilla demuestra como administrar contenido publico desde el backend, incluyendo textos, imagenes y recursos descargables.',
-      en: 'This starter profile demonstrates how to manage public content from the backend, including text, imagery, and downloadable resources.',
-    },
-    availability: 'Disponible para nuevos proyectos',
-    location: 'Ubicacion configurable desde el panel',
-    email: '',
-    phone: '',
-    metadata: {
-      about: {
-        es: 'Reemplaza este bloque con una historia profesional breve, clara y enfocada en el valor que quieres comunicar en tu portfolio.',
-        en: 'Replace this block with a short professional story focused on the value you want to communicate in your portfolio.',
+  return {
+    projects,
+    techSkills: buildTechSkills(assets),
+    experience: buildExperience([
+      ['alpha-studio', '2025 - Actual', 'Alpha Studio', 'Rol de ejemplo para experiencias laborales configurables.', 'Example role for configurable work experiences.'],
+      ['north-hub', '2024 - 2025', 'North Hub', 'Segunda experiencia base con descripcion editable desde el panel.', 'Second base experience with editable description from the dashboard.'],
+      ['independent', '2023 - Actual', 'Independent Projects', 'Trabajo independiente en productos digitales y soporte tecnico.', 'Independent work across digital products and technical support.'],
+      ['solid-ops', '2018 - 2023', 'Solid Ops', 'Experiencia senior orientada a coordinacion tecnica y continuidad operativa.', 'Senior experience focused on technical coordination and operational continuity.'],
+      ['legacy-systems', '2013 - 2018', 'Legacy Systems', 'Experiencia historica para poblar la trayectoria profesional inicial.', 'Historic experience to populate the initial professional timeline.'],
+    ]),
+    testimonials: buildTestimonials([
+      ['client-one', 'Client One', 'Product Lead', 'Acme Corp', 'Este espacio muestra un testimonio de ejemplo listo para ser reemplazado con contenido real.', 'This area displays a starter testimonial ready to be replaced with real content.'],
+      ['client-two', 'Client Two', 'Engineering Manager', 'North Hub', 'La estructura soporta testimonios bilingues y estados activos controlados desde el panel.', 'The structure supports bilingual testimonials and active states managed from the dashboard.'],
+      ['client-three', 'Client Three', 'Founder', 'Studio Zero', 'Utiliza este item como referencia para cargar citas de clientes o colegas.', 'Use this item as a reference for loading quotes from clients or colleagues.'],
+    ]),
+    socialLinks: buildSocialLinks([
+      ['github', 'GitHub', 'https://github.com/', 'fa-brands fa-github'],
+      ['linkedin', 'LinkedIn', 'https://www.linkedin.com/', 'fa-brands fa-linkedin'],
+      ['x', 'X', 'https://x.com/', 'fa-brands fa-x-twitter'],
+    ]),
+    resumes: buildResumes([
+      ['portfolio-owner-cv-es', 'Portfolio Owner - CV Español', 'Portfolio Owner - CV English', 'portfolio-owner-cv-es.pdf', 'es'],
+      ['portfolio-owner-cv-en', 'Portfolio Owner - CV Español', 'Portfolio Owner - CV English', 'portfolio-owner-cv-en.pdf', 'en'],
+    ]),
+    profile: {
+      key: ProfileKeyEnum.MAIN_PROFILE,
+      slug: ProfileKeyEnum.MAIN_PROFILE,
+      label: { es: 'Portfolio Owner', en: 'Portfolio Owner' },
+      title: {
+        es: 'Entre interfaz y logica: un portfolio listo para personalizar.',
+        en: 'Between interface and logic: a portfolio ready to customize.',
       },
-      heroSlides: [
-        {
-          title: { es: 'Desarrollador web', en: 'Web developer' },
-          description: {
-            es: 'Slide inicial de ejemplo para presentar un enfoque profesional principal.',
-            en: 'Starter slide used to present a primary professional angle.',
-          },
-          image: heroSlideFallbackImage,
+      description: {
+        es: 'Este perfil semilla demuestra como administrar contenido publico desde el backend, incluyendo textos, imagenes y recursos descargables.',
+        en: 'This starter profile demonstrates how to manage public content from the backend, including text, imagery, and downloadable resources.',
+      },
+      availability: 'Disponible para nuevos proyectos',
+      location: 'Ubicacion configurable desde el panel',
+      email: '',
+      phone: '',
+      metadata: {
+        about: {
+          es: 'Reemplaza este bloque con una historia profesional breve, clara y enfocada en el valor que quieres comunicar en tu portfolio.',
+          en: 'Replace this block with a short professional story focused on the value you want to communicate in your portfolio.',
         },
-        {
-          title: { es: 'Desarrollador backend', en: 'Backend developer' },
-          description: {
-            es: 'Slide de ejemplo para una especialidad secundaria o complementaria.',
-            en: 'Starter slide for a secondary or complementary specialization.',
+        heroSlides: [
+          {
+            title: { es: 'Desarrollador web', en: 'Web developer' },
+            description: {
+              es: 'Slide inicial de ejemplo para presentar un enfoque profesional principal.',
+              en: 'Starter slide used to present a primary professional angle.',
+            },
+            image: assets.heroSlideFallbackImage,
           },
-          image: heroKeyboardBackground,
-        },
-        {
-          title: { es: 'Desarrollador frontend', en: 'Frontend developer' },
-          description: {
-            es: 'Slide final para completar la portada principal del portfolio.',
-            en: 'Final starter slide used to complete the portfolio hero section.',
+          {
+            title: { es: 'Desarrollador backend', en: 'Backend developer' },
+            description: {
+              es: 'Slide de ejemplo para una especialidad secundaria o complementaria.',
+              en: 'Starter slide for a secondary or complementary specialization.',
+            },
+            image: assets.heroKeyboardBackground,
           },
-          image: heroWallpaperBackground,
+          {
+            title: { es: 'Desarrollador frontend', en: 'Frontend developer' },
+            description: {
+              es: 'Slide final para completar la portada principal del portfolio.',
+              en: 'Final starter slide used to complete the portfolio hero section.',
+            },
+            image: assets.heroWallpaperBackground,
+          },
+        ],
+        portfolioMedia: {
+          headerLogo: assets.starterHeaderLogo,
+          aboutPrimaryImage: assets.starterAboutPrimaryImage,
+          aboutSecondaryImage: assets.starterAboutSecondaryImage,
+          footerCenterImage: assets.starterFooterCenterImage,
+          cvHeroBackground: assets.cvHeroBackground,
+          cvSectionBackground: assets.cvSectionBackground,
+          heroSlideFallbackImage: assets.heroSlideFallbackImage,
+          projectFallbackImage: assets.projectFallbackImage,
+          decorativeCloudIcon: assets.cloudIcon,
+          decorativeWebDevelopmentIcon: assets.webDevelopmentIcon,
+          decorativeMultitaskIcon: assets.multitaskIcon,
+          decorativeApiIcon: assets.apiIcon,
+          decorativeServerIcon: assets.serverIcon,
+          decorativeRainDigits: assets.rainDigits,
+          decorativeWebBackground: assets.webBackground,
+          testimonialLogos: [],
         },
-      ],
-      portfolioMedia: {
-        headerLogo,
-        aboutPrimaryImage,
-        aboutSecondaryImage,
-        footerCenterImage,
-        cvHeroBackground,
-        cvSectionBackground,
-        heroSlideFallbackImage,
-        projectFallbackImage,
-        decorativeCloudIcon: cloudIcon,
-        decorativeWebDevelopmentIcon: webDevelopmentIcon,
-        decorativeMultitaskIcon: multitaskIcon,
-        decorativeApiIcon: apiIcon,
-        decorativeServerIcon: serverIcon,
-        decorativeRainDigits: rainDigits,
-        decorativeWebBackground: webBackground,
-        testimonialLogos: [],
       },
     },
   };
+}
+
+function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
+  const projects = [
+    {
+      slug: 'portfolio-cms-dinamico',
+      title: { es: 'Portfolio CMS Dinamico', en: 'Dynamic Portfolio CMS' },
+      summary: {
+        es: 'Portfolio administrable con contenido, media y seed desde backend.',
+        en: 'Admin-driven portfolio with backend-managed content, media, and seed flows.',
+      },
+      description: {
+        es: 'Proyecto personal enfocado en convertir un portfolio tradicional en una plataforma dinamica con panel administrativo, configuracion visual y recursos servidos desde backend.',
+        en: 'Personal project focused on turning a traditional portfolio into a dynamic platform with an admin panel, visual configuration, and backend-served assets.',
+      },
+      stack: ['Angular', 'Express', 'MongoDB', 'CoreUI', 'MinIO'],
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
+      projectLink: '',
+      codeLink: 'https://github.com/EleazarGamezD',
+      featured: true,
+      status: ProjectStatusEnum.PUBLISHED,
+      publishedAt: '2026-01-01',
+    },
+    {
+      slug: 'meraki-office-marketplace',
+      title: { es: 'Meraki Office Marketplace', en: 'Meraki Office Marketplace' },
+      summary: {
+        es: 'Marketplace con pasarelas de pago, chats y logistica.',
+        en: 'Marketplace with payment gateways, chats, and logistics integrations.',
+      },
+      description: {
+        es: 'Caso representativo de desarrollo fullstack aplicado a un marketplace con integraciones de pagos, comunicacion y operacion logistica.',
+        en: 'Representative fullstack work applied to a marketplace with payment, communication, and logistics integrations.',
+      },
+      stack: ['Angular', 'Node.js', 'Express', 'MongoDB', 'Payments'],
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
+      projectLink: '',
+      codeLink: '',
+      featured: true,
+      status: ProjectStatusEnum.PUBLISHED,
+      publishedAt: '2025-01-01',
+    },
+    {
+      slug: 'custom-business-platforms',
+      title: { es: 'Plataformas de Negocio a Medida', en: 'Custom Business Platforms' },
+      summary: {
+        es: 'Soluciones fullstack para operaciones, soporte y crecimiento digital.',
+        en: 'Fullstack solutions for operations, support, and digital growth.',
+      },
+      description: {
+        es: 'Compilacion de proyectos personalizados para empresas y clientes donde se priorizaron arquitectura limpia, mantenibilidad y velocidad de entrega.',
+        en: 'Compilation of tailored projects for companies and clients prioritizing clean architecture, maintainability, and delivery speed.',
+      },
+      stack: ['TypeScript', 'Angular', 'Express', 'Docker'],
+      images: [assets.projectPlaceholder],
+      coverImage: assets.projectPlaceholder,
+      projectLink: '',
+      codeLink: '',
+      featured: true,
+      status: ProjectStatusEnum.PUBLISHED,
+      publishedAt: '2024-01-01',
+    },
+  ];
+
+  return {
+    projects,
+    techSkills: buildTechSkills(assets),
+    experience: buildExperience([
+      ['l4-ventures-llc', '2025 - Actual', 'L4 Ventures LLC', 'Desarrollador Fullstack, desarrollo de aplicaciones web.', 'Fullstack Developer focused on web application development.'],
+      ['meraki-office', '2024 - 2025', 'Meraki Office', 'Desarrollador Fullstack, creacion de marketplace, integracion de pasarelas de pago, chats y plataformas de logistica.', 'Fullstack Developer, marketplace creation, payment gateway integration, chat systems, and logistics platforms.'],
+      ['freelance', '2023 - Actual', 'Freelance', 'Desarrollador Fullstack en proyectos personalizados.', 'Fullstack Developer working on custom projects.'],
+      ['postouch-colombia', '2018 - 2023', 'PosTouch Colombia S.A.S', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Head of technical department, supporting fiscal and accounting systems.'],
+      ['retail-pos-systems', '2013 - 2018', 'Retail Pos Systems Tec. C.A.', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Head of technical department, supporting fiscal and accounting systems.'],
+    ]),
+    testimonials: buildTestimonials([
+      ['arian-valdivieso', 'Arian Valdivieso', 'COO', 'Meraki Office', 'Eleazar demostro ser un miembro excepcional del equipo, destacandose por su naturaleza proactiva y sus notables habilidades de adaptacion. Su compromiso con los proyectos y entusiasmo por aprender contribuyo significativamente a nuestro exito en Meraki.', 'Eleazar proved to be an exceptional team member, standing out for his proactive nature and remarkable adaptability. His commitment to projects and eagerness to learn contributed significantly to our success at Meraki.'],
+      ['wilhelm-flores', 'Wilhelm Flores', 'Full Stack Developer', 'Meraki Office', 'Eleazar es un excelente solucionador de problemas. Su capacidad para pensar fuera de lo convencional y proponer soluciones escalables fue clave para el exito de nuestros proyectos.', 'Eleazar is an excellent problem solver. His ability to think beyond the conventional and propose scalable solutions was key to the success of our projects.'],
+      ['elvis-garcia', 'Elvis Garcia', 'Backend Developer / DevOps', 'Meraki Office', 'Trabaje con Eleazar resolviendo problemas tecnicos de forma eficiente y profesional. Durante nuestro tiempo juntos, demostro ser sumamente efectivo generando soluciones escalables y robustas para el equipo.', 'I worked with Eleazar solving technical issues efficiently and professionally. During our time together, he proved highly effective at delivering scalable and robust solutions for the team.'],
+    ]),
+    socialLinks: buildSocialLinks([
+      ['github', 'GitHub', 'https://github.com/EleazarGamezD', 'fa-brands fa-github'],
+      ['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/eleazargamez/', 'fa-brands fa-linkedin'],
+      ['x', 'X', 'https://x.com/Eleazar_Gamez', 'fa-brands fa-x-twitter'],
+    ]),
+    resumes: buildResumes([
+      ['eleazar-gamez-cv-es', 'Eleazar Gamez - CV Español', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-es.pdf', 'es'],
+      ['eleazar-gamez-cv-en', 'Eleazar Gamez - CV Español', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-en.pdf', 'en'],
+    ]),
+    profile: {
+      key: ProfileKeyEnum.MAIN_PROFILE,
+      slug: ProfileKeyEnum.MAIN_PROFILE,
+      label: { es: 'Eleazar Gamez', en: 'Eleazar Gamez' },
+      title: {
+        es: 'Eleazar Gamez Fullstack Developer',
+        en: 'Eleazar Gamez Fullstack Developer',
+      },
+      description: {
+        es: 'Portfolio profesional de Eleazar Gamez, Fullstack Developer especializado en Angular, Node.js y mas tecnologias web.',
+        en: 'Professional portfolio of Eleazar Gamez, Fullstack Developer focused on Angular, Node.js, and modern web technologies.',
+      },
+      availability: 'Disponible para nuevos proyectos',
+      location: 'Colombia',
+      email: 'eleazar.gamezd@gmail.com',
+      phone: '',
+      metadata: {
+        about: {
+          es: 'Desarrollador Fullstack con experiencia construyendo aplicaciones web, marketplaces y paneles administrativos. Mi enfoque combina producto, arquitectura y ejecucion tecnica para transformar ideas en soluciones funcionales y mantenibles.',
+          en: 'Fullstack Developer with experience building web applications, marketplaces, and admin dashboards. My approach combines product thinking, architecture, and technical execution to turn ideas into functional, maintainable solutions.',
+        },
+        heroSlides: [
+          {
+            title: { es: 'Desarrollador web', en: 'Web developer' },
+            description: {
+              es: 'Construyo experiencias web completas desde interfaz hasta backend.',
+              en: 'I build complete web experiences from interface to backend.',
+            },
+            image: assets.heroSlideFallbackImage,
+          },
+          {
+            title: { es: 'Desarrollador backend', en: 'Backend developer' },
+            description: {
+              es: 'Diseño APIs, flujos de negocio y servicios listos para escalar.',
+              en: 'I design APIs, business flows, and services ready to scale.',
+            },
+            image: assets.heroKeyboardBackground,
+          },
+          {
+            title: { es: 'Desarrollador frontend', en: 'Frontend developer' },
+            description: {
+              es: 'Transformo interfaces en experiencias claras, modernas y configurables.',
+              en: 'I turn interfaces into clear, modern, and configurable experiences.',
+            },
+            image: assets.heroWallpaperBackground,
+          },
+        ],
+        portfolioMedia: {
+          headerLogo: assets.personalHeaderLogo,
+          aboutPrimaryImage: assets.personalAboutPrimaryImage,
+          aboutSecondaryImage: assets.personalAboutSecondaryImage,
+          footerCenterImage: assets.personalFooterCenterImage,
+          cvHeroBackground: assets.cvHeroBackground,
+          cvSectionBackground: assets.cvSectionBackground,
+          heroSlideFallbackImage: assets.heroSlideFallbackImage,
+          projectFallbackImage: assets.projectFallbackImage,
+          decorativeCloudIcon: assets.cloudIcon,
+          decorativeWebDevelopmentIcon: assets.webDevelopmentIcon,
+          decorativeMultitaskIcon: assets.multitaskIcon,
+          decorativeApiIcon: assets.apiIcon,
+          decorativeServerIcon: assets.serverIcon,
+          decorativeRainDigits: assets.rainDigits,
+          decorativeWebBackground: assets.webBackground,
+          testimonialLogos: [],
+        },
+      },
+    },
+  };
+}
+
+async function runSeedPreset(preset: SeedPreset) {
+  const db = getDatabase();
+  const now = new Date();
+  const assets = await loadSeedAssets();
+  const bundle = preset === 'demo-personal'
+    ? buildDemoPersonalSeedBundle(assets)
+    : buildStarterSeedBundle(assets);
 
   try {
     await db.collection(DatabaseCollectionEnum.FILES).deleteMany({});
@@ -434,28 +711,29 @@ export async function seedInitialContent() {
   }
 
   await db.collection(DatabaseCollectionEnum.PROJECTS).deleteMany({});
-  await db.collection(DatabaseCollectionEnum.PROJECTS).insertMany(projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(DatabaseCollectionEnum.PROJECTS).insertMany(bundle.projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(ContentCollectionEnum.TECH_SKILLS).deleteMany({});
-  await db.collection(ContentCollectionEnum.TECH_SKILLS).insertMany(techSkills.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.TECH_SKILLS).insertMany(bundle.techSkills.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(ContentCollectionEnum.EXPERIENCE).deleteMany({});
-  await db.collection(ContentCollectionEnum.EXPERIENCE).insertMany(experience.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.EXPERIENCE).insertMany(bundle.experience.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(ContentCollectionEnum.TESTIMONIALS).deleteMany({});
-  await db.collection(ContentCollectionEnum.TESTIMONIALS).insertMany(testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.TESTIMONIALS).insertMany(bundle.testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(ContentCollectionEnum.SOCIAL_LINKS).deleteMany({});
-  await db.collection(ContentCollectionEnum.SOCIAL_LINKS).insertMany(socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.SOCIAL_LINKS).insertMany(bundle.socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(ContentCollectionEnum.RESUMES).deleteMany({});
-  await db.collection(ContentCollectionEnum.RESUMES).insertMany(resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.RESUMES).insertMany(bundle.resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
   await db.collection(DatabaseCollectionEnum.PROFILE).deleteMany({ key: ProfileKeyEnum.MAIN_PROFILE });
-  await db.collection(DatabaseCollectionEnum.PROFILE).insertOne({ ...profile, createdAt: now, updatedAt: now });
+  await db.collection(DatabaseCollectionEnum.PROFILE).insertOne({ ...bundle.profile, createdAt: now, updatedAt: now });
 
   return {
     seeded: true,
+    preset,
     collections: [
       DatabaseCollectionEnum.PROJECTS,
       ContentCollectionEnum.TECH_SKILLS,
@@ -466,6 +744,18 @@ export async function seedInitialContent() {
       DatabaseCollectionEnum.PROFILE,
     ],
   };
+}
+
+export async function seedStarterContent() {
+  return runSeedPreset('starter');
+}
+
+export async function seedDemoPersonalContent() {
+  return runSeedPreset('demo-personal');
+}
+
+export async function seedInitialContent() {
+  return seedStarterContent();
 }
 
 function sanitizeAdminUser(adminUser: AdminUserDocument | null) {

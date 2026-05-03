@@ -1,11 +1,11 @@
 import { closeDatabaseConnection } from '../config/db.js';
 import { connectToDatabase } from '../config/db.js';
-import { seedInitialContent } from '../modules/admin/admin.service.js';
+import { seedStarterContent } from '../modules/admin/admin.service.js';
 
 async function seed() {
   await connectToDatabase();
-  await seedInitialContent();
-  console.log('Initial content seeded successfully.');
+  await seedStarterContent();
+  console.log('Starter content seeded successfully.');
 }
 
 seed()

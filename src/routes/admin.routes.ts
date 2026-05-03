@@ -14,7 +14,8 @@ import {
   getAdminUserById,
   listAdminUsers,
   loginAdminUser,
-  seedInitialContent,
+  seedDemoPersonalContent,
+  seedStarterContent,
   updateAdminUser,
 } from '../modules/admin/admin.service.js';
 import { getDashboardMetrics } from '../modules/analytics/analytics.service.js';
@@ -110,14 +111,33 @@ adminRouter.get(
 adminRouter.post(
   '/seed-initial',
   requireApiKey,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
     // #swagger.summary = 'Run initial MongoDB seed'
-    const result = await seedInitialContent();
+    const preset = typeof req.query.preset === 'string' ? req.query.preset : 'starter';
+    const result = preset === 'demo-personal'
+      ? await seedDemoPersonalContent()
+      : await seedStarterContent();
 
     res.status(200).json({
       message: 'Initial seed executed successfully.',
+      ...result,
+    });
+  }),
+);
+
+adminRouter.post(
+  '/seed-demo-personal',
+  requireApiKey,
+  asyncHandler(async (_req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "ApiKeyAuth": [] }]
+    // #swagger.summary = 'Run personal demo MongoDB seed'
+    const result = await seedDemoPersonalContent();
+
+    res.status(200).json({
+      message: 'Personal demo seed executed successfully.',
       ...result,
     });
   }),
