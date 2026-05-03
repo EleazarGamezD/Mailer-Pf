@@ -18,6 +18,8 @@ const __dirname = path.dirname(__filename);
 export function createApp() {
   const app = express();
   const swaggerDocument = readSwaggerDocument();
+  const swaggerUiDistVersion = '5.32.4';
+  const swaggerCdnBase = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${swaggerUiDistVersion}`;
 
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -52,6 +54,11 @@ export function createApp() {
     swaggerUi.serve,
     swaggerUi.setup(swaggerDocument, {
       explorer: true,
+      customCssUrl: `${swaggerCdnBase}/swagger-ui.css`,
+      customJs: [
+        `${swaggerCdnBase}/swagger-ui-bundle.js`,
+        `${swaggerCdnBase}/swagger-ui-standalone-preset.js`,
+      ],
       swaggerOptions: {
         persistAuthorization: true,
       },
