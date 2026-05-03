@@ -4,7 +4,8 @@ import { Binary } from 'mongodb';
 
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
 import type { StoredFileEntity } from '../../../core/interfaces/domain.js';
-import { FileBaseService, type FileAssetResponse, type FileBinaryPayload } from '../fileServiceBase/fileBase.service.js';
+import type { FileAssetResponse, FileBinaryPayload } from '../../../core/interfaces/files.js';
+import { FileBaseService } from '../fileServiceBase/fileBase.service.js';
 import { FilesRepository } from '../files.repository.js';
 
 const filesRepository = new FilesRepository();

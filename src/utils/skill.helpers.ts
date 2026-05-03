@@ -1,9 +1,8 @@
-import type { ContentDocument, LocalizedText } from '../core/interfaces/domain.js';
+import type { LocalizedText } from '../core/interfaces/domain.js';
+import type { SkillFinder } from '../core/types/slug.js';
 
 import { buildSlugFromLocalizedTitle } from './content.helpers.js';
 import { toDisplayCapitalization } from './text-format.js';
-
-type SkillFinder = (slug: string) => Promise<ContentDocument | null>;
 
 export function normalizeTechSkillLabel(value: string): LocalizedText {
   const normalized = toDisplayCapitalization(value);

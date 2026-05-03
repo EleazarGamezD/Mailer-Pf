@@ -1,10 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import { verifyAdminToken, type AdminJwtPayload } from '../utils/jwt.js';
+import type { AuthenticatedAdminRequest } from '../core/interfaces/auth.js';
+import { verifyAdminToken } from '../utils/jwt.js';
 
-export type AuthenticatedAdminRequest = Request & {
-  adminUser?: AdminJwtPayload;
-};
+export type { AuthenticatedAdminRequest } from '../core/interfaces/auth.js';
 
 export function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   const authorizationHeader = req.header('authorization');

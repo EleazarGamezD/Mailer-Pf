@@ -1,6 +1,10 @@
 import type { IPaginationOptions, IPaginationResponse } from '../../core/interfaces/common.interface.js';
+import { ContentCollectionEnum } from '../../core/enums/content-collection.enum.js';
+import { ContentResourceEnum } from '../../core/enums/content-resource.enum.js';
+import { ProfileKeyEnum } from '../../core/enums/profile-key.enum.js';
 import type { ContentDocument, ExperiencePeriod, ProfileDocument } from '../../core/interfaces/domain.js';
 import type { ContentPayload, ProfilePayload } from '../../core/interfaces/requests.js';
+import type { ContentResourceName } from '../../core/types/content.js';
 import { isJsonObject } from '../../core/interfaces/json.js';
 
 import {
@@ -15,18 +19,16 @@ import { fileService } from '../files/index.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
 const collectionMap = {
-  techSkills: new ContentRepository('tech_skills'),
-  experience: new ContentRepository('experience'),
-  socialLinks: new ContentRepository('social_links'),
-  resumes: new ContentRepository('resumes'),
-  testimonials: new ContentRepository('testimonials'),
+  [ContentResourceEnum.TECH_SKILLS]: new ContentRepository(ContentCollectionEnum.TECH_SKILLS),
+  [ContentResourceEnum.EXPERIENCE]: new ContentRepository(ContentCollectionEnum.EXPERIENCE),
+  [ContentResourceEnum.SOCIAL_LINKS]: new ContentRepository(ContentCollectionEnum.SOCIAL_LINKS),
+  [ContentResourceEnum.RESUMES]: new ContentRepository(ContentCollectionEnum.RESUMES),
+  [ContentResourceEnum.TESTIMONIALS]: new ContentRepository(ContentCollectionEnum.TESTIMONIALS),
 };
 
 const profileRepository = new ProfileRepository();
 
-type ResourceName = keyof typeof collectionMap;
-
-function getRepository(resourceName: ResourceName) {
+function getRepository(resourceName: ContentResourceName) {
   return collectionMap[resourceName];
 }
 
@@ -132,12 +134,12 @@ function buildResumeDownloadFileName(
   return `${safeBaseName || 'resume'}.${getResumeFileExtension(fileName, mimeType)}`;
 }
 
-async function resolveContentItem(resourceName: ResourceName, item: ContentDocument | null) {
+async function resolveContentItem(resourceName: ContentResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
   }
 
-  if (resourceName === 'experience') {
+  if (resourceName === ContentResourceEnum.EXPERIENCE) {
     const period = normalizeExperiencePeriod(item.period, item.period, item.value ?? item.metadata?.year);
 
     return {
@@ -147,7 +149,7 @@ async function resolveContentItem(resourceName: ResourceName, item: ContentDocum
     };
   }
 
-  if (resourceName !== 'techSkills') {
+  if (resourceName !== ContentResourceEnum.TECH_SKILLS) {
     return item;
   }
 
@@ -176,11 +178,11 @@ async function resolveProfileDocument(profile: ProfileDocument | null) {
 }
 
 async function normalizeLocalizedContent(
-  resourceName: ResourceName,
+  resourceName: ContentResourceName,
   payload: ContentPayload,
   defaults: Partial<ContentDocument> = {},
 ): Promise<Omit<ContentDocument, '_id' | 'createdAt' | 'updatedAt'>> {
-  if (resourceName === 'techSkills') {
+  if (resourceName === ContentResourceEnum.TECH_SKILLS) {
     const rawLabel =
       getLocalizedField(payload, 'label').es ||
       getLocalizedField(payload, 'label').en ||
@@ -206,7 +208,7 @@ async function normalizeLocalizedContent(
       description: { es: '', en: '' },
       label,
       value: label.es,
-      icon: await fileService.normalizeImageAsset(payload.icon ?? null, 'techSkills.icon'),
+      icon: await fileService.normalizeImageAsset(payload.icon ?? null, `${ContentResourceEnum.TECH_SKILLS}.icon`),
       href: '',
       order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
       active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
@@ -241,16 +243,16 @@ async function normalizeLocalizedContent(
     label,
     value: payload.value ?? defaults.value ?? null,
     period:
-      resourceName === 'experience'
+      resourceName === ContentResourceEnum.EXPERIENCE
         ? normalizeExperiencePeriod(payload.period, defaults.period, payload.value ?? defaults.value ?? defaults.metadata?.year)
         : defaults.period,
     icon: payload.icon ?? defaults.icon ?? null,
     href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
     order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
-    active: resourceName === 'resumes' ? true : typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
+    active: resourceName === ContentResourceEnum.RESUMES ? true : typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
     metadata: isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {},
     fileName:
-      resourceName === 'resumes'
+      resourceName === ContentResourceEnum.RESUMES
         ? buildResumeDownloadFileName(label, title, rawFileName, mimeType)
         : rawFileName,
     mimeType,
@@ -258,13 +260,13 @@ async function normalizeLocalizedContent(
   };
 }
 
-export async function listContent(resourceName: ResourceName) {
+export async function listContent(resourceName: ContentResourceName) {
   const items = await getRepository(resourceName).find({}, { sort: { order: 1, createdAt: -1 } });
   return Promise.all(items.map((item) => resolveContentItem(resourceName, item)));
 }
 
 export async function listContentPaginated(
-  resourceName: ResourceName,
+  resourceName: ContentResourceName,
   paginationOptions: IPaginationOptions = {},
 ): Promise<IPaginationResponse<NonNullable<Awaited<ReturnType<typeof resolveContentItem>>>>> {
   const paginatedItems = await getRepository(resourceName).findPaginated(
@@ -282,17 +284,17 @@ export async function listContentPaginated(
 }
 
 export async function getProfile() {
-  return resolveProfileDocument(await profileRepository.findOne({ key: 'main-profile' }));
+  return resolveProfileDocument(await profileRepository.findOne({ key: ProfileKeyEnum.MAIN_PROFILE }));
 }
 
 export async function upsertProfile(payload: ProfilePayload) {
-  const existing = await profileRepository.findOne({ key: 'main-profile' });
+  const existing = await profileRepository.findOne({ key: ProfileKeyEnum.MAIN_PROFILE });
   const rawMetadata = isJsonObject(payload.metadata) ? payload.metadata : existing?.metadata || {};
   const metadata = await fileService.storeProfileMetadata(rawMetadata);
 
   const base = {
-    key: 'main-profile',
-    slug: 'main-profile',
+    key: ProfileKeyEnum.MAIN_PROFILE,
+    slug: ProfileKeyEnum.MAIN_PROFILE,
     title: resolveEnglishContent(getLocalizedField(payload, 'title')),
     description: resolveEnglishContent(getLocalizedField(payload, 'description')),
     label: resolveEnglishContent(getLocalizedField(payload, 'label')),
@@ -313,16 +315,16 @@ export async function upsertProfile(payload: ProfilePayload) {
     await profileRepository.updateById(existing._id!, base);
   }
 
-  return resolveProfileDocument(await profileRepository.findOne({ key: 'main-profile' }));
+  return resolveProfileDocument(await profileRepository.findOne({ key: ProfileKeyEnum.MAIN_PROFILE }));
 }
 
-export async function createContentItem(resourceName: ResourceName, payload: ContentPayload) {
+export async function createContentItem(resourceName: ContentResourceName, payload: ContentPayload) {
   const repository = getRepository(resourceName);
   const normalizedDocument = await normalizeLocalizedContent(resourceName, payload);
   const document = {
     ...normalizedDocument,
     value:
-      resourceName === 'experience'
+      resourceName === ContentResourceEnum.EXPERIENCE
         ? formatExperiencePeriod(normalizedDocument.period ?? null)
         : normalizedDocument.value,
     createdAt: new Date(),
@@ -334,7 +336,7 @@ export async function createContentItem(resourceName: ResourceName, payload: Con
 }
 
 export async function updateContentItem(
-  resourceName: ResourceName,
+  resourceName: ContentResourceName,
   id: string,
   payload: ContentPayload,
 ) {
@@ -350,7 +352,7 @@ export async function updateContentItem(
   const updated = await repository.updateById(objectId, {
     ...normalizedDocument,
     value:
-      resourceName === 'experience'
+      resourceName === ContentResourceEnum.EXPERIENCE
         ? formatExperiencePeriod(normalizedDocument.period ?? null)
         : normalizedDocument.value,
     updatedAt: new Date(),
@@ -359,7 +361,7 @@ export async function updateContentItem(
   return resolveContentItem(resourceName, updated);
 }
 
-export async function deleteContentItem(resourceName: ResourceName, id: string) {
+export async function deleteContentItem(resourceName: ContentResourceName, id: string) {
   const repository = getRepository(resourceName);
   const result = await repository.deleteById(parseObjectId(id));
 

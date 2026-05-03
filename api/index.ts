@@ -4,6 +4,9 @@ import { ensureSwaggerDocument } from '../src/docs/swagger.js';
 
 let appPromise: Promise<ReturnType<typeof createApp>> | null = null;
 
+type AppRequest = Parameters<ReturnType<typeof createApp>>[0];
+type AppResponse = Parameters<ReturnType<typeof createApp>>[1];
+
 async function getApp() {
   if (!appPromise) {
     appPromise = (async () => {
@@ -16,7 +19,7 @@ async function getApp() {
   return appPromise;
 }
 
-export default async function handler(req: unknown, res: unknown) {
+export default async function handler(req: AppRequest, res: AppResponse) {
   const app = await getApp();
   return app(req, res);
 }

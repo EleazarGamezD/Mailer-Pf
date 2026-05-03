@@ -1,13 +1,9 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 
 import { env } from '../config/env.js';
+import type { AdminJwtPayload } from '../core/interfaces/auth.js';
 
-export interface AdminJwtPayload {
-  sub: string;
-  email: string;
-  username: string;
-  role: string;
-}
+export type { AdminJwtPayload } from '../core/interfaces/auth.js';
 
 export function signAdminToken(payload: AdminJwtPayload) {
   return jwt.sign(payload, env.jwtSecret, {

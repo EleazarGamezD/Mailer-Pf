@@ -2,6 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 
 import { getDatabase } from '../../config/db.js';
+import { AdminRoleEnum } from '../../core/enums/admin-role.enum.js';
+import { ContentCollectionEnum } from '../../core/enums/content-collection.enum.js';
+import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enum.js';
+import { ProfileKeyEnum } from '../../core/enums/profile-key.enum.js';
+import { ProjectStatusEnum } from '../../core/enums/project-status.enum.js';
 import type { AdminUserDocument } from '../../core/interfaces/domain.js';
 import { fileService } from '../files/index.js';
 import type {
@@ -10,6 +15,7 @@ import type {
   UpdateAdminUserPayload,
 } from '../../core/interfaces/requests.js';
 import { AdminUsersRepository } from '../../repositories/admin-users.repository.js';
+import { parseEnumValue } from '../../utils/enum.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { signAdminToken } from '../../utils/jwt.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
@@ -194,7 +200,7 @@ export async function seedInitialContent() {
       projectLink: 'https://example.com/starter-platform',
       codeLink: 'https://github.com/example/starter-platform',
       featured: true,
-      status: 'published',
+      status: ProjectStatusEnum.PUBLISHED,
       publishedAt: '2025-01-01',
     },
     {
@@ -214,7 +220,7 @@ export async function seedInitialContent() {
       projectLink: 'https://example.com/commerce-api',
       codeLink: 'https://github.com/example/commerce-api',
       featured: true,
-      status: 'published',
+      status: ProjectStatusEnum.PUBLISHED,
       publishedAt: '2025-01-01',
     },
     {
@@ -234,7 +240,7 @@ export async function seedInitialContent() {
       projectLink: 'https://example.com/ops-dashboard',
       codeLink: 'https://github.com/example/ops-dashboard',
       featured: true,
-      status: 'published',
+      status: ProjectStatusEnum.PUBLISHED,
       publishedAt: '2025-01-01',
     },
   ];
@@ -354,8 +360,8 @@ export async function seedInitialContent() {
   }));
 
   const profile = {
-    key: 'main-profile',
-    slug: 'main-profile',
+    key: ProfileKeyEnum.MAIN_PROFILE,
+    slug: ProfileKeyEnum.MAIN_PROFILE,
     label: { es: 'Portfolio Owner', en: 'Portfolio Owner' },
     title: {
       es: 'Entre interfaz y logica: un portfolio listo para personalizar.',
@@ -422,35 +428,43 @@ export async function seedInitialContent() {
   };
 
   try {
-    await db.collection('files').deleteMany({});
+    await db.collection(DatabaseCollectionEnum.FILES).deleteMany({});
   } catch (error) {
     console.warn('Unable to clear files collection during seed.', error);
   }
 
-  await db.collection('projects').deleteMany({});
-  await db.collection('projects').insertMany(projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(DatabaseCollectionEnum.PROJECTS).deleteMany({});
+  await db.collection(DatabaseCollectionEnum.PROJECTS).insertMany(projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('tech_skills').deleteMany({});
-  await db.collection('tech_skills').insertMany(techSkills.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.TECH_SKILLS).deleteMany({});
+  await db.collection(ContentCollectionEnum.TECH_SKILLS).insertMany(techSkills.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('experience').deleteMany({});
-  await db.collection('experience').insertMany(experience.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.EXPERIENCE).deleteMany({});
+  await db.collection(ContentCollectionEnum.EXPERIENCE).insertMany(experience.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('testimonials').deleteMany({});
-  await db.collection('testimonials').insertMany(testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.TESTIMONIALS).deleteMany({});
+  await db.collection(ContentCollectionEnum.TESTIMONIALS).insertMany(testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('social_links').deleteMany({});
-  await db.collection('social_links').insertMany(socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.SOCIAL_LINKS).deleteMany({});
+  await db.collection(ContentCollectionEnum.SOCIAL_LINKS).insertMany(socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('resumes').deleteMany({});
-  await db.collection('resumes').insertMany(resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  await db.collection(ContentCollectionEnum.RESUMES).deleteMany({});
+  await db.collection(ContentCollectionEnum.RESUMES).insertMany(resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection('profile').deleteMany({ key: 'main-profile' });
-  await db.collection('profile').insertOne({ ...profile, createdAt: now, updatedAt: now });
+  await db.collection(DatabaseCollectionEnum.PROFILE).deleteMany({ key: ProfileKeyEnum.MAIN_PROFILE });
+  await db.collection(DatabaseCollectionEnum.PROFILE).insertOne({ ...profile, createdAt: now, updatedAt: now });
 
   return {
     seeded: true,
-    collections: ['projects', 'tech_skills', 'experience', 'testimonials', 'social_links', 'resumes', 'profile'],
+    collections: [
+      DatabaseCollectionEnum.PROJECTS,
+      ContentCollectionEnum.TECH_SKILLS,
+      ContentCollectionEnum.EXPERIENCE,
+      ContentCollectionEnum.TESTIMONIALS,
+      ContentCollectionEnum.SOCIAL_LINKS,
+      ContentCollectionEnum.RESUMES,
+      DatabaseCollectionEnum.PROFILE,
+    ],
   };
 }
 
@@ -468,8 +482,7 @@ export async function createAdminUser(payload: CreateAdminUserPayload) {
   const username = typeof payload.username === 'string' ? payload.username.trim().toLowerCase() : '';
   const displayName = typeof payload.displayName === 'string' ? payload.displayName.trim() : '';
   const password = typeof payload.password === 'string' ? payload.password : '';
-  const requestedRole = typeof payload.role === 'string' ? payload.role : 'admin';
-  const role = requestedRole === 'super_admin' || requestedRole === 'editor' ? requestedRole : 'admin';
+  const role = parseEnumValue(AdminRoleEnum, payload.role, AdminRoleEnum.ADMIN);
 
   if (!email || !username || !displayName || !password) {
     throw createHttpError(400, 'email, username, displayName and password are required.');
@@ -571,7 +584,7 @@ export async function getAdminUserById(id: string) {
     return null;
   }
 
-  const adminUser = await database.collection<AdminUserDocument>('admin_users').findOne({
+  const adminUser = await database.collection<AdminUserDocument>(DatabaseCollectionEnum.ADMIN_USERS).findOne({
     _id: new ObjectId(id),
   });
 
@@ -596,7 +609,7 @@ export async function updateAdminUser(id: string, payload: UpdateAdminUserPayloa
     throw createHttpError(400, 'Invalid admin user id.');
   }
 
-  const currentUser = await database.collection<AdminUserDocument>('admin_users').findOne({
+  const currentUser = await database.collection<AdminUserDocument>(DatabaseCollectionEnum.ADMIN_USERS).findOne({
     _id: new ObjectId(id),
   });
 
@@ -607,10 +620,7 @@ export async function updateAdminUser(id: string, payload: UpdateAdminUserPayloa
   const nextDisplayName = typeof payload.displayName === 'string'
     ? payload.displayName.trim()
     : currentUser.displayName;
-  const requestedRole = typeof payload.role === 'string' ? payload.role : currentUser.role;
-  const nextRole = requestedRole === 'super_admin' || requestedRole === 'editor' || requestedRole === 'admin'
-    ? requestedRole
-    : currentUser.role;
+  const nextRole = parseEnumValue(AdminRoleEnum, payload.role, currentUser.role);
   const nextActive = typeof payload.active === 'boolean' ? payload.active : currentUser.active;
 
   if (!nextDisplayName) {

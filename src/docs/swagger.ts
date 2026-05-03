@@ -4,7 +4,9 @@ import swaggerAutogen from 'swagger-autogen';
 import url from 'url';
 
 import { env } from '../config/env.js';
+import { contentResourceValues } from '../core/types/content.js';
 import type { JsonObject, JsonValue } from '../core/interfaces/json.js';
+import type { SwaggerDocument, SwaggerOperation, SwaggerPathMap } from '../core/types/swagger.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,13 +43,7 @@ const doc = {
   },
 };
 
-const contentResources = ['techSkills', 'experience', 'socialLinks', 'resumes', 'testimonials'] as const;
-
-type SwaggerOperation = JsonObject;
-type SwaggerPathMap = Record<string, Record<string, SwaggerOperation>>;
-type SwaggerDocument = JsonObject & {
-  paths?: SwaggerPathMap;
-};
+const contentResources = contentResourceValues;
 
 function getFirstTag(operation: SwaggerOperation) {
   const tags = operation.tags;

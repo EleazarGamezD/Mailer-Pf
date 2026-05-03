@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { contentResourceValues } from '../core/types/content.js';
 import type { ContentListQuery, ContentPayload, ProfilePayload } from '../core/interfaces/requests.js';
 import type { IPaginationOptions } from '../core/interfaces/common.interface.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
@@ -35,7 +36,7 @@ contentRouter.put(
   }),
 );
 
-const resourceNames = ['techSkills', 'experience', 'socialLinks', 'resumes', 'testimonials'] as const;
+const resourceNames = contentResourceValues;
 
 for (const resourceName of resourceNames) {
   contentRouter.get(

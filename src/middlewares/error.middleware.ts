@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import type { HttpError } from '../utils/http-error.js';
+import type { HttpError } from '../core/interfaces/error.js';
 
 export function notFoundHandler(req: Request, res: Response) {
   res.status(404).json({

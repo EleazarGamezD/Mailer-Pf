@@ -1,6 +1,9 @@
 import type { IPaginationOptions, IPaginationResponse } from '../../core/interfaces/common.interface.js';
+import { ContentCollectionEnum } from '../../core/enums/content-collection.enum.js';
+import { ProjectStatusEnum } from '../../core/enums/project-status.enum.js';
 import type { ContentDocument, ProjectDocument } from '../../core/interfaces/domain.js';
 import type { StoredImageAsset } from '../../core/interfaces/image.js';
+import type { ResolvedProjectDocument, ResolvedTechSkill } from '../../core/interfaces/projects.js';
 import type { ProjectPayload } from '../../core/interfaces/requests.js';
 
 import {
@@ -15,39 +18,7 @@ import { fileService } from '../files/index.js';
 import { ProjectsRepository } from './projects.repository.js';
 
 const projectsRepository = new ProjectsRepository();
-const techSkillsRepository = new ContentRepository('tech_skills');
-
-interface ResolvedTechSkill {
-  _id: string;
-  slug: string;
-  label: {
-    es: string;
-    en: string;
-  };
-  icon: string | null;
-}
-
-interface ResolvedProjectDocument {
-  _id?: ProjectDocument['_id'];
-  slug: string;
-  title: ProjectDocument['title'];
-  summary: ProjectDocument['summary'];
-  description: ProjectDocument['description'];
-  stack: string[];
-  skillIds: string[];
-  primarySkillId: string | null;
-  skills: ResolvedTechSkill[];
-  primarySkill: ResolvedTechSkill | null;
-  images: Array<string | StoredImageAsset>;
-  coverImage: string | StoredImageAsset | null;
-  projectLink: string;
-  codeLink: string;
-  featured: boolean;
-  status: string;
-  publishedAt: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+const techSkillsRepository = new ContentRepository(ContentCollectionEnum.TECH_SKILLS);
 
 async function normalizeProjectPayload(
   payload: ProjectPayload,
@@ -82,7 +53,7 @@ async function normalizeProjectPayload(
     projectLink: typeof payload.projectLink === 'string' ? payload.projectLink : '',
     codeLink: typeof payload.codeLink === 'string' ? payload.codeLink : '',
     featured: Boolean(payload.featured),
-    status: typeof payload.status === 'string' ? payload.status : 'draft',
+    status: payload.status ?? ProjectStatusEnum.DRAFT,
     publishedAt: typeof payload.publishedAt === 'string' ? payload.publishedAt : null,
   };
 }

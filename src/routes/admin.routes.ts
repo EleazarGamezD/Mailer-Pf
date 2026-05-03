@@ -6,7 +6,8 @@ import type {
   LoginAdminUserPayload,
   UpdateAdminUserPayload,
 } from '../core/interfaces/requests.js';
-import { requireAdminAuth, type AuthenticatedAdminRequest } from '../middlewares/admin-auth.middleware.js';
+import type { AuthenticatedAdminRequest } from '../core/interfaces/auth.js';
+import { requireAdminAuth } from '../middlewares/admin-auth.middleware.js';
 import { requireApiKey } from '../middlewares/api-key.middleware.js';
 import {
   createAdminUser,

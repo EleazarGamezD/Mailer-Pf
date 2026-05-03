@@ -1,5 +1,7 @@
 import { MongoClient } from 'mongodb';
 
+import { ContentCollectionEnum } from '../core/enums/content-collection.enum.js';
+import { DatabaseCollectionEnum } from '../core/enums/database-collection.enum.js';
 import { env } from './env.js';
 
 let client: MongoClient | null = null;
@@ -15,14 +17,14 @@ export async function connectToDatabase() {
   database = client.db(env.mongoDbName);
 
   await Promise.all([
-    database.collection('projects').createIndex({ slug: 1 }, { unique: true }),
-    database.collection('profile').createIndex({ key: 1 }, { unique: true }),
-    database.collection('files').createIndex({ fileName: 1 }, { unique: true }),
-    database.collection('tech_skills').createIndex({ slug: 1 }, { unique: true, sparse: true }),
-    database.collection('experience').createIndex({ slug: 1 }, { unique: true, sparse: true }),
-    database.collection('social_links').createIndex({ slug: 1 }, { unique: true, sparse: true }),
-    database.collection('resumes').createIndex({ active: 1 }),
-    database.collection('analytics_events').createIndex({ createdAt: -1 }),
+    database.collection(DatabaseCollectionEnum.PROJECTS).createIndex({ slug: 1 }, { unique: true }),
+    database.collection(DatabaseCollectionEnum.PROFILE).createIndex({ key: 1 }, { unique: true }),
+    database.collection(DatabaseCollectionEnum.FILES).createIndex({ fileName: 1 }, { unique: true }),
+    database.collection(ContentCollectionEnum.TECH_SKILLS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
+    database.collection(ContentCollectionEnum.EXPERIENCE).createIndex({ slug: 1 }, { unique: true, sparse: true }),
+    database.collection(ContentCollectionEnum.SOCIAL_LINKS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
+    database.collection(ContentCollectionEnum.RESUMES).createIndex({ active: 1 }),
+    database.collection(DatabaseCollectionEnum.ANALYTICS_EVENTS).createIndex({ createdAt: -1 }),
   ]);
 
   return database;

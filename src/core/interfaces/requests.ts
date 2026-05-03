@@ -1,3 +1,6 @@
+import { AdminRoleEnum } from '../enums/admin-role.enum.js';
+import { AnalyticsEventTypeEnum } from '../enums/analytics-event-type.enum.js';
+import { ProjectStatusEnum } from '../enums/project-status.enum.js';
 import type { JsonObject, JsonValue } from './json.js';
 import type { ImageUploadContract, StoredImageAsset } from './image.js';
 import type { ExperiencePeriod, LocalizedText } from './domain.js';
@@ -18,7 +21,7 @@ export interface ProjectPayload extends JsonObject {
   projectLink?: string;
   codeLink?: string;
   featured?: boolean;
-  status?: string;
+  status?: ProjectStatusEnum;
   publishedAt?: string | null;
 }
 
@@ -70,7 +73,7 @@ export interface CreateAdminUserPayload extends JsonObject {
   username?: string;
   displayName?: string;
   password?: string;
-  role?: string;
+  role?: AdminRoleEnum;
 }
 
 export interface LoginAdminUserPayload extends JsonObject {
@@ -81,12 +84,12 @@ export interface LoginAdminUserPayload extends JsonObject {
 
 export interface UpdateAdminUserPayload extends JsonObject {
   displayName?: string;
-  role?: string;
+  role?: AdminRoleEnum;
   active?: boolean;
 }
 
 export interface AnalyticsEventPayload extends JsonObject {
-  type?: string;
+  type?: AnalyticsEventTypeEnum;
   path?: string;
   projectId?: string | null;
   language?: string;

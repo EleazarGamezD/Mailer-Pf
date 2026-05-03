@@ -1,35 +1,17 @@
 import { env } from '../../../config/env.js';
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
+import type {
+    FileAssetResponse,
+    FileBinaryPayload,
+    FileStorageMode,
+    ResolvedMetadataObject,
+} from '../../../core/interfaces/files.js';
 import type { ImageUploadContract, StoredImageAsset } from '../../../core/interfaces/image.js';
 import type { JsonObject, JsonValue } from '../../../core/interfaces/json.js';
 import { isJsonObject } from '../../../core/interfaces/json.js';
 import { createHttpError } from '../../../utils/http-error.js';
 
-export type FileStorageMode = FileStorageModeEnum;
-
-export interface FileBinaryPayload {
-    id?: string;
-    name?: string;
-    base64: string;
-    buffer: Buffer;
-    mimeType: string;
-    extension: string;
-    originalName: string;
-    size: number;
-}
-
-export interface FileAssetResponse {
-    buffer: Buffer;
-    mimeType: string;
-    fileName: string;
-    size: number;
-}
-
-type ResolvedMetadataPrimitive = string | number | boolean | null;
-type ResolvedMetadataValue = ResolvedMetadataPrimitive | StoredImageAsset | ResolvedMetadataObject | ResolvedMetadataValue[];
-interface ResolvedMetadataObject {
-    [key: string]: ResolvedMetadataValue;
-}
+export type { FileAssetResponse, FileBinaryPayload, FileStorageMode } from '../../../core/interfaces/files.js';
 
 export abstract class FileBaseService {
     readonly storageMode: FileStorageMode;

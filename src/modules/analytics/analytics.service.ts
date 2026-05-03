@@ -1,15 +1,18 @@
 import type { Filter } from 'mongodb';
 import { getDatabase } from '../../config/db.js';
+import { AnalyticsEventTypeEnum } from '../../core/enums/analytics-event-type.enum.js';
+import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enum.js';
 import type { AnalyticsEventDocument } from '../../core/interfaces/domain.js';
 import type { AnalyticsEventPayload, AnalyticsFiltersPayload } from '../../core/interfaces/requests.js';
 import { isJsonObject } from '../../core/interfaces/json.js';
+import { parseEnumValue } from '../../utils/enum.js';
 import { AnalyticsEventsRepository } from './analytics.repository.js';
 
 const analyticsEventsRepository = new AnalyticsEventsRepository();
 
 export async function registerAnalyticsEvent(payload: AnalyticsEventPayload) {
   const document: AnalyticsEventDocument = {
-    type: typeof payload.type === 'string' ? payload.type : 'page_view',
+    type: parseEnumValue(AnalyticsEventTypeEnum, payload.type, AnalyticsEventTypeEnum.PAGE_VIEW),
     path: typeof payload.path === 'string' ? payload.path : '/',
     projectId: typeof payload.projectId === 'string' ? payload.projectId : null,
     language: typeof payload.language === 'string' ? payload.language : 'es',
@@ -76,7 +79,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
   const matchFilter = parseDateFilters(filters) as Filter<AnalyticsEventDocument>;
 
   const groupedTotals = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .aggregate<{ _id: string; total: number }>([
       {
         $match: matchFilter,
@@ -94,16 +97,16 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     .toArray();
 
   const recentEvents = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .find(matchFilter, { sort: { createdAt: -1 }, limit: 20 })
     .toArray();
 
   const totalEvents = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .countDocuments(matchFilter);
 
   const groupedByPath = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .aggregate<{ _id: string; total: number }>([
       {
         $match: matchFilter,
@@ -124,7 +127,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     .toArray();
 
   const groupedByProject = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .aggregate<{ _id: string | null; total: number }>([
       {
         $match: matchFilter,
@@ -145,7 +148,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     .toArray();
 
   const groupedByLanguage = await database
-    .collection<AnalyticsEventDocument>('analytics_events')
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
     .aggregate<{ _id: string; total: number }>([
       {
         $match: matchFilter,

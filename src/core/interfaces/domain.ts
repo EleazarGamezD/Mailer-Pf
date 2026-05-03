@@ -1,4 +1,8 @@
 import type { Document, ObjectId } from 'mongodb';
+import { AdminRoleEnum } from '../enums/admin-role.enum.js';
+import { AnalyticsEventTypeEnum } from '../enums/analytics-event-type.enum.js';
+import { ProfileKeyEnum } from '../enums/profile-key.enum.js';
+import { ProjectStatusEnum } from '../enums/project-status.enum.js';
 import type { StoredFileDocument } from './image.js';
 import type { JsonObject, JsonValue } from './json.js';
 
@@ -36,7 +40,7 @@ export interface ProjectDocument extends BaseEntity {
   projectLink: string;
   codeLink: string;
   featured: boolean;
-  status: string;
+  status: ProjectStatusEnum;
   publishedAt: string | null;
 }
 
@@ -59,8 +63,8 @@ export interface ContentDocument extends BaseEntity {
 }
 
 export interface ProfileDocument extends BaseEntity {
-  key: string;
-  slug: string;
+  key: ProfileKeyEnum;
+  slug: ProfileKeyEnum;
   title: LocalizedText;
   description: LocalizedText;
   label: LocalizedText;
@@ -73,7 +77,7 @@ export interface ProfileDocument extends BaseEntity {
 
 export interface AnalyticsEventDocument extends Document {
   _id?: ObjectId;
-  type: string;
+  type: AnalyticsEventTypeEnum;
   path: string;
   projectId: string | null;
   language: string;
@@ -87,7 +91,7 @@ export interface AdminUserDocument extends BaseEntity {
   username: string;
   displayName: string;
   passwordHash: string;
-  role: 'super_admin' | 'admin' | 'editor';
+  role: AdminRoleEnum;
   active: boolean;
   lastLoginAt: Date | null;
 }

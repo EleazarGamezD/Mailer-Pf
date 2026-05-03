@@ -4,8 +4,9 @@ import { Client } from 'minio';
 
 import { env } from '../../../config/env.js';
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
+import type { FileAssetResponse, FileBinaryPayload } from '../../../core/interfaces/files.js';
 import { createHttpError } from '../../../utils/http-error.js';
-import { FileBaseService, type FileAssetResponse, type FileBinaryPayload } from '../fileServiceBase/fileBase.service.js';
+import { FileBaseService } from '../fileServiceBase/fileBase.service.js';
 
 export class FileBucketService extends FileBaseService {
     private readonly client: Client;

@@ -1,8 +1,7 @@
-import type { LocalizedText, ProjectDocument } from '../core/interfaces/domain.js';
+import type { LocalizedText } from '../core/interfaces/domain.js';
+import type { ProjectSlugExistsHandler } from '../core/types/slug.js';
 
 import { buildSlugFromLocalizedTitle } from './content.helpers.js';
-
-type ProjectSlugExistsHandler = (slug: string) => Promise<ProjectDocument | null>;
 
 export async function buildUniqueProjectSlug(
   title: LocalizedText,

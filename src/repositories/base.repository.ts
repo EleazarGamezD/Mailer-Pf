@@ -1,9 +1,8 @@
-import type { Filter, ObjectId, OptionalUnlessRequiredId } from 'mongodb';
+import type { Filter, OptionalUnlessRequiredId } from 'mongodb';
 import type { IPaginationOptions, IPaginationResponse } from '../core/interfaces/common.interface.js';
+import type { RepositoryDocumentId } from '../core/types/repository.js';
 
 import { getDatabase } from '../config/db.js';
-
-type RepositoryDocumentId = ObjectId | string | number | bigint | boolean | Date | Uint8Array;
 
 export class BaseRepository<TSchema extends { _id?: RepositoryDocumentId }> {
   private readonly collectionName: string;
