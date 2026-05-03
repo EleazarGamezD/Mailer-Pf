@@ -61,7 +61,9 @@ export function createApp() {
   app.use('/api', apiRoutes);
   app.use('/assets', assetsRouter);
   app.use('/api/assets', assetsRouter);
-
+  app.use('/', (_req, res) => {
+    res.status(200).json({ message: 'Portfolio API Running 🚀' });
+  } );
   app.use(notFoundHandler);
   app.use(errorHandler);
 
