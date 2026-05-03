@@ -115,7 +115,16 @@ export abstract class FileBaseService {
             return `/api/assets/${normalizedFileName}`;
         }
 
-        return `${normalizedBaseUrl}/assets/${normalizedFileName}`;
+        const resolvedBaseUrl = normalizedBaseUrl.startsWith('http://') || normalizedBaseUrl.startsWith('https://')
+            ? normalizedBaseUrl
+            : `https://${normalizedBaseUrl}`;
+        const baseUrl = new URL(resolvedBaseUrl);
+        const normalizedPathname = baseUrl.pathname.replace(/\/+$/u, '');
+        const apiPath = normalizedPathname.endsWith('/api')
+            ? normalizedPathname
+            : `${normalizedPathname || ''}/api`;
+
+        return `${baseUrl.origin}${apiPath}/assets/${normalizedFileName}`;
     }
 
     protected normalizeExtension(extension: string | null | undefined) {
