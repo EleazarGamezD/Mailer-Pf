@@ -128,7 +128,6 @@ startxref
 type SeedPreset = 'starter' | 'demo-personal';
 
 const collectionsToResetBeforeSeed = [
-  DatabaseCollectionEnum.FILES,
   DatabaseCollectionEnum.PROJECTS,
   DatabaseCollectionEnum.PROFILE,
   DatabaseCollectionEnum.ANALYTICS_EVENTS,

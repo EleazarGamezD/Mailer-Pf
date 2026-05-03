@@ -14,13 +14,6 @@ export interface FileBinaryPayload {
   size: number;
 }
 
-export interface FileAssetResponse {
-  buffer: Buffer;
-  mimeType: string;
-  fileName: string;
-  size: number;
-}
-
 export type ResolvedMetadataPrimitive = string | number | boolean | null;
 export type ResolvedMetadataValue =
   | ResolvedMetadataPrimitive

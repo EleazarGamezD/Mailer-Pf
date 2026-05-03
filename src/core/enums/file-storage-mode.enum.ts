@@ -1,4 +1,4 @@
 export enum FileStorageModeEnum {
-  DB = 'db',
-  BUCKET = 'bucket',
+  S3 = 's3',
+  R2 = 'r2',
 }

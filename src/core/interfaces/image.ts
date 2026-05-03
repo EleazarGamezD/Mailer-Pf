@@ -1,4 +1,3 @@
-import type { Binary } from 'mongodb';
 import { FileStorageModeEnum } from '../enums/file-storage-mode.enum.js';
 import type { JsonObject } from './json.js';
 
@@ -16,9 +15,4 @@ export interface StoredImageAsset extends JsonObject {
   fileName: string;
   extension?: string;
   url?: string;
-}
-
-export interface StoredFileDocument {
-  fileName: string;
-  buffer: Binary | Buffer;
 }

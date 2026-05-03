@@ -3,7 +3,6 @@ import { AdminRoleEnum } from '../enums/admin-role.enum.js';
 import { AnalyticsEventTypeEnum } from '../enums/analytics-event-type.enum.js';
 import { ProfileKeyEnum } from '../enums/profile-key.enum.js';
 import { ProjectStatusEnum } from '../enums/project-status.enum.js';
-import type { StoredFileDocument } from './image.js';
 import type { JsonObject, JsonValue } from './json.js';
 
 export interface LocalizedText {
@@ -21,10 +20,6 @@ export interface BaseEntity extends Document {
   _id?: ObjectId;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface StoredFileEntity extends Document, StoredFileDocument {
-  _id?: ObjectId;
 }
 
 export interface ProjectDocument extends BaseEntity {
