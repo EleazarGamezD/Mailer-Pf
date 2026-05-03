@@ -237,6 +237,22 @@ export abstract class FileBaseService {
 
         const result: JsonObject = {};
         for (const [key, item] of Object.entries(value)) {
+            if (this.isImageCollectionMetadataKey(key)) {
+                result[key] = await this.normalizeImageCollection(
+                    item as Array<string | ImageUploadContract | StoredImageAsset | JsonObject | null>,
+                    `${fieldName}.${key}`,
+                );
+                continue;
+            }
+
+            if (this.isImageMetadataKey(key)) {
+                result[key] = await this.normalizeImageAsset(
+                    item as string | ImageUploadContract | StoredImageAsset | JsonObject | null | undefined,
+                    `${fieldName}.${key}`,
+                );
+                continue;
+            }
+
             if (key === 'image' || key === 'coverImage' || key === 'images') {
                 result[key] = key === 'images'
                     ? await this.normalizeImageCollection(
@@ -276,6 +292,19 @@ export abstract class FileBaseService {
 
         const result: ResolvedMetadataObject = {};
         for (const [key, item] of Object.entries(value)) {
+            if (this.isImageCollectionMetadataKey(key)) {
+                if (Array.isArray(item)) {
+                    result[key] = (await Promise.all(item.map((entry) => this.resolveImageAsset(entry as string | StoredImageAsset | null))))
+                        .filter((entry): entry is string | StoredImageAsset => entry !== null);
+                }
+                continue;
+            }
+
+            if (this.isImageMetadataKey(key)) {
+                result[key] = await this.resolveImageAsset(item as string | StoredImageAsset | null);
+                continue;
+            }
+
             if (key === 'image' || key === 'coverImage' || key === 'images') {
                 if (key === 'images' && Array.isArray(item)) {
                     result[key] = (await Promise.all(item.map((entry) => this.resolveImageAsset(entry as string | StoredImageAsset | null))))
@@ -393,6 +422,14 @@ export abstract class FileBaseService {
 
     private isByteArray(value: JsonValue | undefined): value is number[] {
         return Array.isArray(value) && value.every((item) => typeof item === 'number' && Number.isInteger(item) && item >= 0 && item <= 255);
+    }
+
+    private isImageMetadataKey(key: string) {
+        return /(image|icon|logo|background)$/iu.test(key);
+    }
+
+    private isImageCollectionMetadataKey(key: string) {
+        return /(images|icons|logos|backgrounds)$/iu.test(key);
     }
 
     private toStoredImageAsset(candidate: JsonObject): StoredImageAsset {

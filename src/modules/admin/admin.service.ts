@@ -1,5 +1,9 @@
+import { readFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
+
 import { getDatabase } from '../../config/db.js';
 import type { AdminUserDocument } from '../../core/interfaces/domain.js';
+import { fileService } from '../files/index.js';
 import type {
   CreateAdminUserPayload,
   LoginAdminUserPayload,
@@ -12,67 +16,223 @@ import { hashPassword, verifyPassword } from '../../utils/password.js';
 
 const adminUsersRepository = new AdminUsersRepository();
 
+const backendSeedAssetRoot = new URL('../../../../Mailer-Pf/src/assets/seed-media/', import.meta.url);
+
+const mimeTypeByExtension: Record<string, string> = {
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  avif: 'image/avif',
+};
+
+async function uploadSeedAsset(relativePath: string) {
+  const assetUrl = new URL(relativePath, backendSeedAssetRoot);
+  const buffer = await readFile(assetUrl);
+  const extension = extname(assetUrl.pathname).replace(/^\./u, '').toLowerCase();
+
+  return fileService.uploadFile({
+    buffer,
+    base64: buffer.toString('base64'),
+    extension,
+    mimeType: mimeTypeByExtension[extension] || 'application/octet-stream',
+    originalName: basename(assetUrl.pathname),
+    name: basename(assetUrl.pathname),
+    size: buffer.length,
+  });
+}
+
+async function uploadSvgPlaceholder(label: string, width = 1200, height = 800) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#eef4fb"/>
+          <stop offset="100%" stop-color="#d6e4f4"/>
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#bg)"/>
+      <rect x="24" y="24" width="${width - 48}" height="${height - 48}" rx="28" fill="none" stroke="#7b8aa0" stroke-width="4" stroke-dasharray="16 10"/>
+      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#28476f" font-family="Arial, sans-serif" font-size="${Math.max(
+        26,
+        Math.floor(width / 16),
+      )}" font-weight="700">${label}</text>
+    </svg>
+  `.trim();
+  const buffer = Buffer.from(svg, 'utf-8');
+
+  return fileService.uploadFile({
+    buffer,
+    base64: buffer.toString('base64'),
+    extension: 'svg',
+    mimeType: 'image/svg+xml',
+    originalName: `${label.toLowerCase().replace(/\s+/gu, '-')}.svg`,
+    name: `${label}.svg`,
+    size: buffer.length,
+  });
+}
+
+function createResumePdfBase64(title: string) {
+  const safeTitle = title.replace(/[()]/gu, '');
+  const pdf = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 86 >>
+stream
+BT
+/F1 22 Tf
+72 760 Td
+(${safeTitle}) Tj
+0 -34 Td
+/F1 12 Tf
+(Replace this placeholder resume from the admin panel.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000063 00000 n 
+0000000122 00000 n 
+0000000248 00000 n 
+0000000385 00000 n 
+trailer
+<< /Root 1 0 R /Size 6 >>
+startxref
+455
+%%EOF`;
+
+  return Buffer.from(pdf, 'utf-8').toString('base64');
+}
+
 export async function seedInitialContent() {
   const db = getDatabase();
   const now = new Date();
+  const [
+    angularIcon,
+    bootstrapIcon,
+    nodeExpressIcon,
+    dockerIcon,
+    nestJsIcon,
+    postmanIcon,
+    typescriptIcon,
+    apiIcon,
+    cloudIcon,
+    multitaskIcon,
+    serverIcon,
+    webDevelopmentIcon,
+    rainDigits,
+    webBackground,
+    cvHeroBackground,
+    cvSectionBackground,
+    heroKeyboardBackground,
+    heroWallpaperBackground,
+    headerLogo,
+    aboutPrimaryImage,
+    aboutSecondaryImage,
+    footerCenterImage,
+    heroSlideFallbackImage,
+    projectFallbackImage,
+    projectPlaceholder,
+  ] = await Promise.all([
+    uploadSeedAsset('shared/svg/angular-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/bootstrap-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/node-js-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/docker-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/nestjs-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/postman-icon-svgrepo-com.svg'),
+    uploadSeedAsset('shared/svg/typescript-logo-svgrepo-com.svg'),
+    uploadSeedAsset('shared/images/api_icon.webp'),
+    uploadSeedAsset('shared/images/cloud_icon.webp'),
+    uploadSeedAsset('shared/images/multitask_icon.webp'),
+    uploadSeedAsset('shared/images/server_icon.webp'),
+    uploadSeedAsset('shared/images/web_develop_icon.webp'),
+    uploadSeedAsset('shared/backgrounds/background-numbers-rain.jpg'),
+    uploadSeedAsset('shared/backgrounds/web-background.webp'),
+    uploadSeedAsset('shared/backgrounds/desktop-v3.webp'),
+    uploadSeedAsset('shared/backgrounds/bg-1.webp'),
+    uploadSeedAsset('shared/backgrounds/keyboard.webp'),
+    uploadSeedAsset('shared/backgrounds/wallpaperflare.jpg'),
+    uploadSvgPlaceholder('Portfolio Logo', 640, 240),
+    uploadSvgPlaceholder('About Photo A', 900, 1100),
+    uploadSvgPlaceholder('About Photo B', 900, 1100),
+    uploadSvgPlaceholder('Footer Badge', 480, 480),
+    uploadSeedAsset('shared/backgrounds/bg-1.webp'),
+    uploadSeedAsset('shared/backgrounds/desktop-v3.webp'),
+    uploadSvgPlaceholder('Project Placeholder', 1200, 900),
+  ]);
 
   const projects = [
     {
-      slug: 'mailer-app',
-      title: { es: 'Mailer App', en: 'Mailer App' },
+      slug: 'starter-platform',
+      title: { es: 'Starter Platform', en: 'Starter Platform' },
       summary: {
-        es: 'API backend para envio de emails desde mi portafolio.',
-        en: 'Backend API for sending emails from my portfolio.',
+        es: 'Base de aplicacion fullstack lista para personalizar.',
+        en: 'Fullstack starter application ready to customize.',
       },
       description: {
-        es: 'API backend para envio de emails desde mi portafolio. Envia dos correos: uno para mi y otro para la persona que escribe, confirmando la recepcion.',
-        en: 'Backend API for sending emails from my portfolio. It sends two emails: one to me and one to the person who writes, confirming receipt.',
+        es: 'Proyecto semilla con estructura de frontend y backend pensada para servir como punto de partida de un portfolio profesional configurable.',
+        en: 'Seed project with frontend and backend structure designed as a configurable professional portfolio starting point.',
       },
-      stack: ['Node.js', 'ExpressJS', 'JavaScript', 'Nodemailer', 'Gmail'],
-      images: [],
-      coverImage: null,
-      projectLink: 'Link Privado',
-      codeLink: 'https://github.com/EleazarGamezD/Mailer-Pf',
+      stack: ['Angular', 'Node.js', 'Express', 'MongoDB'],
+      images: [projectPlaceholder],
+      coverImage: projectPlaceholder,
+      projectLink: 'https://example.com/starter-platform',
+      codeLink: 'https://github.com/example/starter-platform',
       featured: true,
       status: 'published',
       publishedAt: '2025-01-01',
     },
     {
-      slug: 'notes-app',
-      title: { es: 'Notes App', en: 'Notes App' },
+      slug: 'commerce-api',
+      title: { es: 'Commerce API', en: 'Commerce API' },
       summary: {
-        es: 'API backend para manejo de notas tipo post-it con usuarios.',
-        en: 'Backend API for post-it style notes with users.',
+        es: 'Servicio de e-commerce modular con enfoque en escalabilidad.',
+        en: 'Modular e-commerce service focused on scalability.',
       },
       description: {
-        es: 'API backend para manejo de notas tipo post-it con usuarios, CRUD completo de notas y manejo de categorias.',
-        en: 'Backend API for post-it style notes with users, full notes CRUD, and category management.',
+        es: 'Ejemplo de arquitectura para catalogo, carrito y autenticacion, pensado como referencia para soluciones de negocio modernas.',
+        en: 'Architecture example for catalog, cart, and authentication, intended as a reference for modern business solutions.',
       },
-      stack: ['Node.js', 'ExpressJS', 'JavaScript', 'MongoDB', 'JWT', 'HTML', 'CSS'],
-      images: [],
-      coverImage: null,
-      projectLink: 'https://back-app-notas.vercel.app/',
-      codeLink: 'https://github.com/EleazarGamezD/back-app-notas',
+      stack: ['NestJS', 'TypeScript', 'PostgreSQL', 'JWT'],
+      images: [projectPlaceholder],
+      coverImage: projectPlaceholder,
+      projectLink: 'https://example.com/commerce-api',
+      codeLink: 'https://github.com/example/commerce-api',
       featured: true,
       status: 'published',
       publishedAt: '2025-01-01',
     },
     {
-      slug: 'tu-bodega-api',
-      title: { es: 'Tu Bodega API', en: 'Tu Bodega API' },
+      slug: 'ops-dashboard',
+      title: { es: 'Ops Dashboard', en: 'Ops Dashboard' },
       summary: {
-        es: 'API de e-commerce escalable con usuarios, roles y productos.',
-        en: 'Scalable e-commerce API with users, roles, and products.',
+        es: 'Panel de operaciones con reporting y control de contenido.',
+        en: 'Operations dashboard with reporting and content control.',
       },
       description: {
-        es: 'API de e-commerce escalable con usuarios, roles, productos, carrito por usuario, control de compras, base de datos Postgres y autenticacion segura.',
-        en: 'Scalable e-commerce API with users, roles, products, user cart, purchase flow, Postgres database, and secure authentication.',
+        es: 'Muestra una experiencia administrativa orientada a configuracion visual, orden de contenido y flujos de mantenimiento sobre datos dinamicos.',
+        en: 'Showcases an administrative experience focused on visual configuration, content ordering, and maintenance flows over dynamic data.',
       },
-      stack: ['Node.js', 'NestJS', 'TypeScript', 'PostgreSQL', 'TypeORM', 'JWT', 'Swagger'],
-      images: [],
-      coverImage: null,
-      projectLink: 'https://tu-bodega.vercel.app/',
-      codeLink: 'https://github.com/EleazarGamezD/Tu-Bodega',
+      stack: ['Angular', 'Express', 'MongoDB', 'CoreUI'],
+      images: [projectPlaceholder],
+      coverImage: projectPlaceholder,
+      projectLink: 'https://example.com/ops-dashboard',
+      codeLink: 'https://github.com/example/ops-dashboard',
       featured: true,
       status: 'published',
       publishedAt: '2025-01-01',
@@ -80,13 +240,13 @@ export async function seedInitialContent() {
   ];
 
   const techSkills = [
-    ['angular', 'Angular', '/assets/images/shared/svg/angular-svgrepo-com.svg'],
-    ['bootstrap', 'Bootstrap', '/assets/images/shared/svg/bootstrap-svgrepo-com.svg'],
-    ['node-express', 'Node.js - Express', '/assets/images/shared/svg/node-js-svgrepo-com.svg'],
-    ['docker', 'Docker', '/assets/images/shared/svg/docker-svgrepo-com.svg'],
-    ['nestjs', 'Nest.js', '/assets/images/shared/svg/nestjs-svgrepo-com.svg'],
-    ['postman', 'Postman', '/assets/images/shared/svg/postman-icon-svgrepo-com.svg'],
-    ['typescript', 'TypeScript', '/assets/images/shared/svg/typescript-logo-svgrepo-com.svg'],
+    ['angular', 'Angular', angularIcon],
+    ['bootstrap', 'Bootstrap', bootstrapIcon],
+    ['node-express', 'Node.js - Express', nodeExpressIcon],
+    ['docker', 'Docker', dockerIcon],
+    ['nestjs', 'Nest.js', nestJsIcon],
+    ['postman', 'Postman', postmanIcon],
+    ['typescript', 'TypeScript', typescriptIcon],
   ].map(([slug, name, icon], index) => ({
     slug,
     label: { es: name, en: name },
@@ -104,11 +264,11 @@ export async function seedInitialContent() {
   }));
 
   const experience = [
-    ['l4-ventures-llc', '2025 - Actual', 'L4 Ventures LLC', 'Desarrollador Fullstack, desarrollo de aplicaciones web.', 'Fullstack developer, web application development.'],
-    ['meraki-office', '2024 - 2025', 'Meraki Office', 'Desarrollador Fullstack, creacion de marketplace, integracion de pasarelas de pago, chats y plataformas de logistica.', 'Fullstack developer, marketplace creation, payment gateway integration, chat systems, and logistics platform integrations.'],
-    ['freelance', '2023 - Actual', 'Freelance', 'Desarrollador Fullstack en proyectos personalizados.', 'Fullstack developer for custom projects.'],
-    ['postouch-colombia', '2018 - 2023', 'PosTouch Colombia S.A.S', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Technical department lead, support for fiscal and accounting systems.'],
-    ['retail-pos-systems', '2013 - 2018', 'Retail Pos Systems Tec. C.A.', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Technical department lead, support for fiscal and accounting systems.'],
+    ['alpha-studio', '2025 - Actual', 'Alpha Studio', 'Rol de ejemplo para experiencias laborales configurables.', 'Example role for configurable work experiences.'],
+    ['north-hub', '2024 - 2025', 'North Hub', 'Segunda experiencia base con descripcion editable desde el panel.', 'Second base experience with editable description from the dashboard.'],
+    ['independent', '2023 - Actual', 'Independent Projects', 'Trabajo independiente en productos digitales y soporte tecnico.', 'Independent work across digital products and technical support.'],
+    ['solid-ops', '2018 - 2023', 'Solid Ops', 'Experiencia senior orientada a coordinacion tecnica y continuidad operativa.', 'Senior experience focused on technical coordination and operational continuity.'],
+    ['legacy-systems', '2013 - 2018', 'Legacy Systems', 'Experiencia historica para poblar la trayectoria profesional inicial.', 'Historic experience to populate the initial professional timeline.'],
   ].map(([slug, year, company, descriptionEs, descriptionEn], index) => {
     const [start, endLabel] = year.split(/\s*-\s*/u);
     const isCurrent = endLabel === 'Actual';
@@ -135,9 +295,9 @@ export async function seedInitialContent() {
   })});
 
   const testimonials = [
-    ['arian-valdivieso', 'Arian Valdivieso', 'COO', 'Meraki Office', 'Eleazar demostró ser un miembro excepcional del equipo, destacándose por su naturaleza proactiva y sus notables habilidades de adaptación. Su compromiso con los proyectos y entusiasmo por aprender contribuyó significativamente a nuestro éxito en Meraki.', 'Eleazar proved to be an exceptional team member, standing out for his proactive nature and remarkable adaptive abilities. His commitment to projects and eagerness to learn significantly contributed to our success at Meraki.'],
-    ['wilhelm-flores', 'Wilhelm Flores', 'Full Stack Developer', 'Meraki Office', 'Eleazar es un excelente solucionador de problemas. Su capacidad para pensar fuera de lo convencional y proponer soluciones escalables fue clave para el éxito de nuestros proyectos.', 'Eleazar is an excellent problem solver. His ability to think outside the conventional and propose scalable solutions was key to the success of our projects.'],
-    ['elvis-garcia', 'Elvis Garcia', 'Backend Developer / DevOps', 'Meraki Office', 'Trabajé con Eleazar resolviendo problemas técnicos de forma eficiente y profesional. Durante nuestro tiempo juntos, demostró ser sumamente efectivo generando soluciones escalables y robustas para el equipo.', 'I worked with Eleazar solving technical problems efficiently and professionally. During our time together, he proved to be extremely effective at generating scalable and robust solutions for the team.'],
+    ['client-one', 'Client One', 'Product Lead', 'Acme Corp', 'Este espacio muestra un testimonio de ejemplo listo para ser reemplazado con contenido real.', 'This area displays a starter testimonial ready to be replaced with real content.'],
+    ['client-two', 'Client Two', 'Engineering Manager', 'North Hub', 'La estructura soporta testimonios bilingues y estados activos controlados desde el panel.', 'The structure supports bilingual testimonials and active states managed from the dashboard.'],
+    ['client-three', 'Client Three', 'Founder', 'Studio Zero', 'Utiliza este item como referencia para cargar citas de clientes o colegas.', 'Use this item as a reference for loading quotes from clients or colleagues.'],
   ].map(([slug, name, position, company, testimonialEs, testimonialEn], index) => ({
     slug,
     label: { es: name, en: name },
@@ -155,9 +315,9 @@ export async function seedInitialContent() {
   }));
 
   const socialLinks = [
-    ['github', 'GitHub', 'https://github.com/EleazarGamezD', 'fa-brands fa-github'],
-    ['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/eleazar-gamez/', 'fa-brands fa-linkedin'],
-    ['x', 'X', 'https://x.com/Eleazar_Gamez', 'fa-brands fa-x-twitter'],
+    ['github', 'GitHub', 'https://github.com/', 'fa-brands fa-github'],
+    ['linkedin', 'LinkedIn', 'https://www.linkedin.com/', 'fa-brands fa-linkedin'],
+    ['x', 'X', 'https://x.com/', 'fa-brands fa-x-twitter'],
   ].map(([slug, name, href, icon], index) => ({
     slug,
     label: { es: name, en: name },
@@ -175,73 +335,97 @@ export async function seedInitialContent() {
   }));
 
   const resumes = [
-    ['eleazar-cv-es', 'Eleazar Gamez - CV Español', 'eleazar-gamez-cv-es.pdf', 'application/pdf'],
-    ['eleazar-cv-en', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-en.pdf', 'application/pdf'],
+    ['portfolio-owner-cv-es', 'Portfolio Owner - CV Español', 'portfolio-owner-cv-es.pdf', 'application/pdf'],
+    ['portfolio-owner-cv-en', 'Portfolio Owner - CV English', 'portfolio-owner-cv-en.pdf', 'application/pdf'],
   ].map(([slug, title, fileName, mimeType], index) => ({
     slug,
-    label: { es: title.split('-')[0] + ' - CV Español', en: title.split('-')[0] + ' - CV English' },
-    title: { es: title.split('-')[0] + ' - CV Español', en: title.split('-')[0] + ' - CV English' },
-    description: { es: 'Currículum vitae profesional', en: 'Professional curriculum vitae' },
+    label: { es: title.includes('Español') ? title : 'Portfolio Owner - CV Español', en: title.includes('English') ? title : 'Portfolio Owner - CV English' },
+    title: { es: title.includes('Español') ? title : 'Portfolio Owner - CV Español', en: title.includes('English') ? title : 'Portfolio Owner - CV English' },
+    description: { es: 'Documento base para hoja de vida descargable', en: 'Starter document for downloadable resume' },
     value: fileName,
     icon: null,
-    href: `/assets/docs/${fileName}`,
+    href: '',
     order: index + 1,
     active: true,
     metadata: { language: slug.includes('es') ? 'es' : 'en' },
     fileName,
     mimeType,
-    base64: '',
+    base64: createResumePdfBase64(title),
   }));
 
   const profile = {
     key: 'main-profile',
     slug: 'main-profile',
-    label: { es: 'Eleazar Gamez', en: 'Eleazar Gamez' },
+    label: { es: 'Portfolio Owner', en: 'Portfolio Owner' },
     title: {
-      es: 'Entre interfaces y logica: transformando ideas en experiencias con alma fullstack.',
-      en: 'Between interfaces and logic: transforming ideas into experiences with a fullstack soul.',
+      es: 'Entre interfaz y logica: un portfolio listo para personalizar.',
+      en: 'Between interface and logic: a portfolio ready to customize.',
     },
     description: {
-      es: 'Soy un desarrollador FullStack con un corazon dividido entre la creatividad del frontend y la logica robusta del backend. Mi expertise abarca la construccion de aplicaciones web dinamicas y escalables, utilizando Angular para dar vida a interfaces intuitivas, mientras que en el backend domino el arte de disenar APIs eficientes con NestJS y Express, asegurando arquitecturas limpias y mantenibles.',
-      en: 'I am a FullStack developer with a heart split between frontend creativity and solid backend logic. My expertise covers building dynamic and scalable web applications, using Angular to craft intuitive interfaces, while on the backend I design efficient APIs with NestJS and Express, ensuring clean and maintainable architectures.',
+      es: 'Este perfil semilla demuestra como administrar contenido publico desde el backend, incluyendo textos, imagenes y recursos descargables.',
+      en: 'This starter profile demonstrates how to manage public content from the backend, including text, imagery, and downloadable resources.',
     },
-    availability: 'Open to new projects',
-    location: 'Working remotely from Colombia',
+    availability: 'Disponible para nuevos proyectos',
+    location: 'Ubicacion configurable desde el panel',
     email: '',
     phone: '',
     metadata: {
       about: {
-        es: 'Me apasiona transformar desafios tecnicos en soluciones elegantes, siempre con un enfoque colaborativo y un compromiso por la calidad. Disfruto aprender constantemente, explorar nuevas herramientas y contribuir a proyectos que dejen un impacto positivo. Para mi, el codigo no solo es funcionalidad, sino tambien la oportunidad de crear algo con proposito.',
-        en: 'I enjoy turning technical challenges into elegant solutions, always with a collaborative mindset and quality focus. I like learning continuously, exploring new tools, and contributing to projects that create positive impact. For me, code is not only functionality, but also an opportunity to build with purpose.',
+        es: 'Reemplaza este bloque con una historia profesional breve, clara y enfocada en el valor que quieres comunicar en tu portfolio.',
+        en: 'Replace this block with a short professional story focused on the value you want to communicate in your portfolio.',
       },
       heroSlides: [
         {
           title: { es: 'Desarrollador web', en: 'Web developer' },
           description: {
-            es: 'Desarrollo soluciones web completas y escalables, combinando tecnologias frontend y backend para crear experiencias digitales robustas y orientadas a resultados, con un enfoque centrado en el usuario.',
-            en: 'I build complete and scalable web solutions, combining frontend and backend technologies to create robust digital experiences focused on outcomes and user needs.',
+            es: 'Slide inicial de ejemplo para presentar un enfoque profesional principal.',
+            en: 'Starter slide used to present a primary professional angle.',
           },
-          image: '/assets/images/shared/backgrounds/bg-1.webp',
+          image: heroSlideFallbackImage,
         },
         {
           title: { es: 'Desarrollador backend', en: 'Backend developer' },
           description: {
-            es: 'Diseno e implemento soluciones backend eficientes: APIs RESTful, gestion de bases de datos y desarrollo de microservicios con Node.js, NestJS y tecnologias cloud.',
-            en: 'I design and implement efficient backend solutions: RESTful APIs, database management, and microservices development with Node.js, NestJS, and cloud technologies.',
+            es: 'Slide de ejemplo para una especialidad secundaria o complementaria.',
+            en: 'Starter slide for a secondary or complementary specialization.',
           },
-          image: '/assets/images/shared/backgrounds/keyboard.webp',
+          image: heroKeyboardBackground,
         },
         {
           title: { es: 'Desarrollador frontend', en: 'Frontend developer' },
           description: {
-            es: 'Creo interfaces de usuario dinamicas y responsivas con Angular, usando componentes reutilizables y metodologias modernas. Me enfoco en rendimiento, accesibilidad y experiencia de usuario.',
-            en: 'I create dynamic and responsive user interfaces with Angular, using reusable components and modern methodologies. I focus on performance, accessibility, and user experience.',
+            es: 'Slide final para completar la portada principal del portfolio.',
+            en: 'Final starter slide used to complete the portfolio hero section.',
           },
-          image: '/assets/images/shared/backgrounds/wallpaperflare.jpg',
+          image: heroWallpaperBackground,
         },
       ],
+      portfolioMedia: {
+        headerLogo,
+        aboutPrimaryImage,
+        aboutSecondaryImage,
+        footerCenterImage,
+        cvHeroBackground,
+        cvSectionBackground,
+        heroSlideFallbackImage,
+        projectFallbackImage,
+        decorativeCloudIcon: cloudIcon,
+        decorativeWebDevelopmentIcon: webDevelopmentIcon,
+        decorativeMultitaskIcon: multitaskIcon,
+        decorativeApiIcon: apiIcon,
+        decorativeServerIcon: serverIcon,
+        decorativeRainDigits: rainDigits,
+        decorativeWebBackground: webBackground,
+        testimonialLogos: [],
+      },
     },
   };
+
+  try {
+    await db.collection('files').deleteMany({});
+  } catch (error) {
+    console.warn('Unable to clear files collection during seed.', error);
+  }
 
   await db.collection('projects').deleteMany({});
   await db.collection('projects').insertMany(projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
