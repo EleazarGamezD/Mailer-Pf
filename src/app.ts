@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 export function createApp() {
   const app = express();
   const swaggerDocument = readSwaggerDocument();
-  const swaggerUiDistVersion = '5.32.4';
+  const swaggerUiDistVersion = '5.10.5';
 
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -65,7 +65,7 @@ export function createApp() {
   );
   app.use('/api', apiRoutes);
   app.use('/', (_req, res) => {
-    res.status(200).json({ message: 'Portfolio API Running 🚀' });
+    res.status(200).json({ message: 'Portfolio API Running 🚀', corsOrigin: env.corsOrigin });
   } );
   app.use(notFoundHandler);
   app.use(errorHandler);
