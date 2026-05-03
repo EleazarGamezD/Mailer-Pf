@@ -19,6 +19,7 @@ export function createApp() {
   const app = express();
   const swaggerDocument = readSwaggerDocument();
   const swaggerUiDistVersion = '5.10.5';
+  const swaggerJsVersion = '5.10.5';
 
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -55,8 +56,8 @@ export function createApp() {
       explorer: true,
       customCssUrl: `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerUiDistVersion}/swagger-ui.min.css`,
       customJs: [
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerUiDistVersion}/swagger-ui-bundle.js`,
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerUiDistVersion}/swagger-ui-standalone-preset.js`,
+        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerJsVersion}/swagger-ui-bundle.js`,
+        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerJsVersion}/swagger-ui-standalone-preset.js`,
       ],
       swaggerOptions: {
         persistAuthorization: true,
