@@ -127,6 +127,18 @@ startxref
 
 type SeedPreset = 'starter' | 'demo-personal';
 
+const collectionsToResetBeforeSeed = [
+  DatabaseCollectionEnum.FILES,
+  DatabaseCollectionEnum.PROJECTS,
+  DatabaseCollectionEnum.PROFILE,
+  DatabaseCollectionEnum.ANALYTICS_EVENTS,
+  ContentCollectionEnum.TECH_SKILLS,
+  ContentCollectionEnum.EXPERIENCE,
+  ContentCollectionEnum.TESTIMONIALS,
+  ContentCollectionEnum.SOCIAL_LINKS,
+  ContentCollectionEnum.RESUMES,
+] as const;
+
 interface SeedAssets {
   angularIcon: string;
   bootstrapIcon: string;
@@ -170,6 +182,8 @@ interface SeedBundle {
 }
 
 async function loadSeedAssets(): Promise<SeedAssets> {
+  console.log('[seed] Uploading seed assets...');
+
   const [
     angularIcon,
     bootstrapIcon,
@@ -231,6 +245,8 @@ async function loadSeedAssets(): Promise<SeedAssets> {
     uploadSeedAsset('archive/home/profile_v2.jpg'),
     uploadSeedAsset('archive/home/FOOTER_CENTER_IMG.png'),
   ]);
+
+  console.log('[seed] Seed assets uploaded successfully.');
 
   return {
     angularIcon,
@@ -699,37 +715,45 @@ function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
 async function runSeedPreset(preset: SeedPreset) {
   const db = getDatabase();
   const now = new Date();
+
+  console.log(`[seed] Starting preset: ${preset}`);
+
+  for (const collectionName of collectionsToResetBeforeSeed) {
+    try {
+      console.log(`[seed] Clearing collection: ${collectionName}`);
+      await db.collection(collectionName).deleteMany({});
+    } catch (error) {
+      console.warn(`Unable to clear ${collectionName} collection during seed.`, error);
+    }
+  }
+
   const assets = await loadSeedAssets();
   const bundle = preset === 'demo-personal'
     ? buildDemoPersonalSeedBundle(assets)
     : buildStarterSeedBundle(assets);
 
-  try {
-    await db.collection(DatabaseCollectionEnum.FILES).deleteMany({});
-  } catch (error) {
-    console.warn('Unable to clear files collection during seed.', error);
-  }
-
-  await db.collection(DatabaseCollectionEnum.PROJECTS).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.projects.length} projects...`);
   await db.collection(DatabaseCollectionEnum.PROJECTS).insertMany(bundle.projects.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(ContentCollectionEnum.TECH_SKILLS).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.techSkills.length} tech skills...`);
   await db.collection(ContentCollectionEnum.TECH_SKILLS).insertMany(bundle.techSkills.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(ContentCollectionEnum.EXPERIENCE).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.experience.length} experience items...`);
   await db.collection(ContentCollectionEnum.EXPERIENCE).insertMany(bundle.experience.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(ContentCollectionEnum.TESTIMONIALS).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.testimonials.length} testimonials...`);
   await db.collection(ContentCollectionEnum.TESTIMONIALS).insertMany(bundle.testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(ContentCollectionEnum.SOCIAL_LINKS).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.socialLinks.length} social links...`);
   await db.collection(ContentCollectionEnum.SOCIAL_LINKS).insertMany(bundle.socialLinks.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(ContentCollectionEnum.RESUMES).deleteMany({});
+  console.log(`[seed] Inserting ${bundle.resumes.length} resumes...`);
   await db.collection(ContentCollectionEnum.RESUMES).insertMany(bundle.resumes.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
 
-  await db.collection(DatabaseCollectionEnum.PROFILE).deleteMany({ key: ProfileKeyEnum.MAIN_PROFILE });
+  console.log('[seed] Inserting profile...');
   await db.collection(DatabaseCollectionEnum.PROFILE).insertOne({ ...bundle.profile, createdAt: now, updatedAt: now });
+
+  console.log(`[seed] Preset completed successfully: ${preset}`);
 
   return {
     seeded: true,

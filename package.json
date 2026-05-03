@@ -1,14 +1,13 @@
 {
-  "name": "Mailer_Porfolio",
-  "version": "1.0.0",
+  "name": "portfolio-api-nodejs-express-mongodb-typescript",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "docs:generate": "tsx src/docs/swagger.ts",
-    "seed:initial": "tsx src/scripts/seed-initial-content.ts",
-    "seed:starter": "tsx src/scripts/seed-initial-content.ts",
-    "seed:demo-personal": "tsx src/scripts/seed-demo-personal-content.ts",
+    "seed:starter": "tsx src/scripts/seed-starter-content.ts",
+    "seed:personal": "tsx src/scripts/seed-personal-content.ts",
     "start": "npm run build && node dist/index.js",
     "dev": "tsx watch src/index.ts"
   },
