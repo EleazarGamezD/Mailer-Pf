@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto';
-
 import { Binary } from 'mongodb';
-
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
 import type { StoredFileEntity } from '../../../core/interfaces/domain.js';
 import type { FileAssetResponse, FileBinaryPayload } from '../../../core/interfaces/files.js';

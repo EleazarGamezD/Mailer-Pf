@@ -5,6 +5,7 @@ import type {
     FileBinaryPayload,
     FileStorageMode,
     ResolvedMetadataObject,
+    ResolvedMetadataValue,
 } from '../../../core/interfaces/files.js';
 import type { ImageUploadContract, StoredImageAsset } from '../../../core/interfaces/image.js';
 import type { JsonObject, JsonValue } from '../../../core/interfaces/json.js';
