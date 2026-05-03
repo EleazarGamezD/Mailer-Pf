@@ -5,5 +5,16 @@ import { FileDatabaseService } from './FileServerDatabase/fileDatabase.service.j
 import { FileBucketService } from './FileServiceBucket/fileBucket.service.js';
 
 export const databaseFileService = new FileDatabaseService();
-export const fileService =
-  env.fileStorageMode === FileStorageModeEnum.BUCKET ? new FileBucketService() : databaseFileService;
+
+export const fileService = (() => {
+  if (env.fileStorageMode !== FileStorageModeEnum.BUCKET) {
+    return databaseFileService;
+  }
+
+  try {
+    return new FileBucketService();
+  } catch (error) {
+    console.error('Bucket file storage initialization failed. Falling back to DB storage.', error);
+    return databaseFileService;
+  }
+})();

@@ -16,14 +16,6 @@ function readBooleanEnv(name: string, fallback = false): boolean {
   return value.toLowerCase() === 'true';
 }
 
-function readRequiredEnv(name: string): string {
-  const value = readEnv(name);
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
 export const env = {
   nodeEnv: readEnv('NODE_ENV', 'development'),
   appPort: Number(readEnv('APP_PORT', '3000')),
@@ -31,9 +23,9 @@ export const env = {
   corsOrigin: readEnv('CORS_ORIGIN', '*'),
   jsonLimit: readEnv('JSON_LIMIT', '12mb'),
   fileStorageMode: readEnv('FILE_STORAGE_MODE', 'db').toLowerCase(),
-  mongoUri: readRequiredEnv('MONGODB_URI'),
+  mongoUri: readEnv('MONGODB_URI'),
   mongoDbName: readEnv('MONGODB_DB_NAME', 'Porfolio'),
-  adminApiKey: readRequiredEnv('ADMIN_API_KEY'),
+  adminApiKey: readEnv('ADMIN_API_KEY'),
   jwtSecret: readEnv('JWT_SECRET', 'dev-jwt-secret'),
   jwtExpiresIn: readEnv('JWT_EXPIRES_IN', '7d'),
   gmailUser: readEnv('GMAIL_USER'),

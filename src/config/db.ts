@@ -12,6 +12,10 @@ export async function connectToDatabase() {
     return database;
   }
 
+  if (!env.mongoUri) {
+    throw new Error('Missing required environment variable: MONGODB_URI');
+  }
+
   client = new MongoClient(env.mongoUri);
   await client.connect();
   database = client.db(env.mongoDbName);
