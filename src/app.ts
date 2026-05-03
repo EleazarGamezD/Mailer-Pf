@@ -14,18 +14,35 @@ import { apiRoutes } from './routes/index.js';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function normalizeCorsOrigin(origin: string) {
+  return origin.trim().replace(/\/+$/u, '');
+}
 
 export function createApp() {
   const app = express();
   const swaggerDocument = readSwaggerDocument();
   const swaggerUiDistVersion = '5.10.5';
   const swaggerJsVersion = '5.10.5';
+  const allowedOrigins = env.corsOrigin === '*'
+    ? []
+    : env.corsOrigin
+      .split(',')
+      .map((item) => normalizeCorsOrigin(item))
+      .filter(Boolean);
 
   app.set('trust proxy', 1);
   app.use(helmet());
   app.use(
     cors({
-      origin: env.corsOrigin === '*' ? true : env.corsOrigin.split(',').map((item) => item.trim()),
+      origin(origin, callback) {
+        if (env.corsOrigin === '*' || !origin) {
+          callback(null, true);
+          return;
+        }
+
+        const normalizedOrigin = normalizeCorsOrigin(origin);
+        callback(null, allowedOrigins.includes(normalizedOrigin));
+      },
     }),
   );
   app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
