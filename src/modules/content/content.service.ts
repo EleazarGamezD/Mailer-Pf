@@ -98,6 +98,40 @@ function normalizeExperiencePeriod(
   return defaultPeriod ?? parseLegacyExperiencePeriod(legacyValue);
 }
 
+function getResumeFileExtension(fileName: string, mimeType: string) {
+  const normalizedFileName = fileName.trim();
+  const extensionMatch = normalizedFileName.match(/\.([a-z0-9]+)$/iu);
+
+  if (extensionMatch?.[1]) {
+    return extensionMatch[1].toLowerCase();
+  }
+
+  switch (mimeType.trim().toLowerCase()) {
+    case 'application/msword':
+      return 'doc';
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      return 'docx';
+    case 'application/pdf':
+    default:
+      return 'pdf';
+  }
+}
+
+function buildResumeDownloadFileName(
+  label: ReturnType<typeof resolveEnglishContent>,
+  title: ReturnType<typeof resolveEnglishContent>,
+  fileName: string,
+  mimeType: string,
+) {
+  const source = label.es || label.en || title.es || title.en || 'resume';
+  const safeBaseName = source
+    .replace(/[\\/:*?"<>|]/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+  return `${safeBaseName || 'resume'}.${getResumeFileExtension(fileName, mimeType)}`;
+}
+
 async function resolveContentItem(resourceName: ResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
@@ -187,6 +221,14 @@ async function normalizeLocalizedContent(
   const description = resolveEnglishContent(getLocalizedField(payload, 'description'));
   const label = resolveEnglishContent(getLocalizedField(payload, 'label'));
   const slugSource = title.es || title.en ? title : label;
+  const mimeType =
+    typeof payload.mimeType === 'string' && payload.mimeType.trim()
+      ? payload.mimeType.trim()
+      : defaults.mimeType || '';
+  const rawFileName =
+    typeof payload.fileName === 'string' && payload.fileName.trim()
+      ? payload.fileName.trim()
+      : defaults.fileName || '';
 
   return {
     key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
@@ -205,10 +247,13 @@ async function normalizeLocalizedContent(
     icon: payload.icon ?? defaults.icon ?? null,
     href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
     order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
-    active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
+    active: resourceName === 'resumes' ? true : typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
     metadata: isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {},
-    fileName: typeof payload.fileName === 'string' ? payload.fileName : defaults.fileName || '',
-    mimeType: typeof payload.mimeType === 'string' ? payload.mimeType : defaults.mimeType || '',
+    fileName:
+      resourceName === 'resumes'
+        ? buildResumeDownloadFileName(label, title, rawFileName, mimeType)
+        : rawFileName,
+    mimeType,
     base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
   };
 }
