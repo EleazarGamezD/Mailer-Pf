@@ -12,6 +12,8 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, '..', '..');
 const outputFile = path.join(projectRoot, 'dist', 'docs', 'swagger-output.json');
+const localSwaggerFile = path.join(projectRoot, 'src', 'docs', 'swagger-output.json');
+const runtimeSwaggerFile = path.join(__dirname, 'swagger-output.json');
 const endpointsFiles = [
   path.join(projectRoot, 'dist', 'routes', 'projects.routes.js'),
   path.join(projectRoot, 'dist', 'routes', 'contact.routes.js'),
@@ -19,6 +21,11 @@ const endpointsFiles = [
   path.join(projectRoot, 'dist', 'routes', 'admin.routes.js'),
   path.join(projectRoot, 'dist', 'routes', 'content.routes.js'),
 ];
+
+function findExistingSwaggerFile() {
+  const candidates = [outputFile, runtimeSwaggerFile, localSwaggerFile];
+  return candidates.find((candidate) => fs.existsSync(candidate));
+}
 
 const doc = {
   info: {
@@ -387,20 +394,35 @@ function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocum
 }
 
 export async function ensureSwaggerDocument() {
-  const generate = swaggerAutogen({ openapi: '3.0.0', autoHeaders: true, autoQuery: true });
-  await generate(outputFile, endpointsFiles, doc);
+  try {
+    const outputDir = path.dirname(outputFile);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
 
-  const generatedDocument = JSON.parse(fs.readFileSync(outputFile, 'utf-8')) as SwaggerDocument;
-  const normalizedDocument = normalizeGeneratedPaths(generatedDocument);
-  fs.writeFileSync(outputFile, JSON.stringify(normalizedDocument, null, 2));
+    const canGenerate = endpointsFiles.every((filePath) => fs.existsSync(filePath));
+    if (!canGenerate) {
+      return;
+    }
+
+    const generate = swaggerAutogen({ openapi: '3.0.0', autoHeaders: true, autoQuery: true });
+    await generate(outputFile, endpointsFiles, doc);
+
+    const generatedDocument = JSON.parse(fs.readFileSync(outputFile, 'utf-8')) as SwaggerDocument;
+    const normalizedDocument = normalizeGeneratedPaths(generatedDocument);
+    fs.writeFileSync(outputFile, JSON.stringify(normalizedDocument, null, 2));
+  } catch (error) {
+    console.warn('Swagger document generation skipped at runtime.', error);
+  }
 }
 
 export function readSwaggerDocument(): JsonObject {
-  if (!fs.existsSync(outputFile)) {
+  const swaggerFile = findExistingSwaggerFile();
+  if (!swaggerFile) {
     return doc as JsonObject;
   }
 
-  return JSON.parse(fs.readFileSync(outputFile, 'utf-8')) as JsonObject;
+  return JSON.parse(fs.readFileSync(swaggerFile, 'utf-8')) as JsonObject;
 }
 
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === __filename;
