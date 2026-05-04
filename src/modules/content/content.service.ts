@@ -134,6 +134,11 @@ function buildResumeDownloadFileName(
   return `${safeBaseName || 'resume'}.${getResumeFileExtension(fileName, mimeType)}`;
 }
 
+function getMetadataString(metadata: ContentDocument['metadata'] | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === 'string' && value.trim() ? value : '';
+}
+
 async function resolveContentItem(resourceName: ContentResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
@@ -146,6 +151,22 @@ async function resolveContentItem(resourceName: ContentResourceName, item: Conte
       ...item,
       period,
       value: formatExperiencePeriod(period) || item.value,
+    };
+  }
+
+  if (resourceName === ContentResourceEnum.TESTIMONIALS) {
+    return {
+      ...item,
+      name: getMetadataString(item.metadata, 'name') || item.label?.es || item.label?.en || '',
+      position: getMetadataString(item.metadata, 'position'),
+      company: getMetadataString(item.metadata, 'company'),
+    };
+  }
+
+  if (resourceName === ContentResourceEnum.RESUMES) {
+    return {
+      ...item,
+      language: getMetadataString(item.metadata, 'language'),
     };
   }
 
@@ -231,6 +252,79 @@ async function normalizeLocalizedContent(
     typeof payload.fileName === 'string' && payload.fileName.trim()
       ? payload.fileName.trim()
       : defaults.fileName || '';
+  const normalizedMetadata = isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {};
+
+  if (resourceName === ContentResourceEnum.TESTIMONIALS) {
+    const name =
+      typeof payload.name === 'string' && payload.name.trim()
+        ? payload.name.trim()
+        : getMetadataString(normalizedMetadata, 'name') || getMetadataString(defaults.metadata, 'name');
+    const position =
+      typeof payload.position === 'string' && payload.position.trim()
+        ? payload.position.trim()
+        : getMetadataString(normalizedMetadata, 'position') || getMetadataString(defaults.metadata, 'position');
+    const company =
+      typeof payload.company === 'string' && payload.company.trim()
+        ? payload.company.trim()
+        : getMetadataString(normalizedMetadata, 'company') || getMetadataString(defaults.metadata, 'company');
+
+    return {
+      key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
+      slug:
+        typeof payload.slug === 'string' && payload.slug.trim()
+          ? payload.slug.trim()
+          : buildSlugFromLocalizedTitle(label.es || label.en ? label : title, defaults.slug || 'item'),
+      title,
+      description,
+      label,
+      value: payload.value ?? defaults.value ?? (name || null),
+      period: defaults.period,
+      icon: payload.icon ?? defaults.icon ?? null,
+      href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
+      order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
+      active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
+      metadata: {
+        ...normalizedMetadata,
+        name,
+        position,
+        company,
+      },
+      fileName: rawFileName,
+      mimeType,
+      base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
+    };
+  }
+
+  if (resourceName === ContentResourceEnum.RESUMES) {
+    const language =
+      typeof payload.language === 'string' && payload.language.trim()
+        ? payload.language.trim()
+        : getMetadataString(normalizedMetadata, 'language') || getMetadataString(defaults.metadata, 'language');
+
+    return {
+      key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
+      slug:
+        typeof payload.slug === 'string' && payload.slug.trim()
+          ? payload.slug.trim()
+          : buildSlugFromLocalizedTitle(slugSource, defaults.slug || 'item'),
+      title,
+      description,
+      label,
+      value: payload.value ?? defaults.value ?? null,
+      period: defaults.period,
+      icon: payload.icon ?? defaults.icon ?? null,
+      href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
+      order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
+      active: true,
+      metadata: {
+        ...normalizedMetadata,
+        language,
+      },
+      fileName: buildResumeDownloadFileName(label, title, rawFileName, mimeType),
+      mimeType,
+      base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
+    };
+  }
 
   return {
     key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
@@ -249,12 +343,9 @@ async function normalizeLocalizedContent(
     icon: payload.icon ?? defaults.icon ?? null,
     href: typeof payload.href === 'string' ? payload.href : defaults.href || '',
     order: Number.isFinite(Number(payload.order)) ? Number(payload.order) : defaults.order || 0,
-    active: resourceName === ContentResourceEnum.RESUMES ? true : typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
-    metadata: isJsonObject(payload.metadata) ? payload.metadata : defaults.metadata || {},
-    fileName:
-      resourceName === ContentResourceEnum.RESUMES
-        ? buildResumeDownloadFileName(label, title, rawFileName, mimeType)
-        : rawFileName,
+    active: typeof payload.active === 'boolean' ? payload.active : defaults.active ?? true,
+    metadata: normalizedMetadata,
+    fileName: rawFileName,
     mimeType,
     base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
   };
@@ -262,7 +353,9 @@ async function normalizeLocalizedContent(
 
 export async function listContent(resourceName: ContentResourceName) {
   const items = await getRepository(resourceName).find({}, { sort: { order: 1, createdAt: -1 } });
-  return Promise.all(items.map((item) => resolveContentItem(resourceName, item)));
+  return (await Promise.all(items.map((item) => resolveContentItem(resourceName, item)))).filter(
+    (item): item is NonNullable<Awaited<ReturnType<typeof resolveContentItem>>> => item !== null,
+  );
 }
 
 export async function listContentPaginated(

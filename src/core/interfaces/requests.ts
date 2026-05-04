@@ -46,6 +46,10 @@ export interface ContentPayload extends JsonObject {
   description?: Partial<LocalizedText>;
   label?: Partial<LocalizedText>;
   value?: JsonValue;
+  name?: string;
+  position?: string;
+  company?: string;
+  language?: string;
   period?: Partial<ExperiencePeriod>;
   icon?: string | ImageUploadContract | StoredImageAsset | null;
   href?: string;

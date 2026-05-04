@@ -62,14 +62,25 @@ export function createApp() {
   app.use(express.json({ limit: env.jsonLimit }));
   app.use(express.urlencoded({ extended: true, limit: env.jsonLimit }));
   app.use(express.static(path.join(__dirname, 'templates')));
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000,
-      max: 120,
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
+  if (env.nodeEnv === 'production') {
+    app.use(
+      rateLimit({
+        windowMs: 60 * 1000,
+        max: 120,
+        standardHeaders: true,
+        legacyHeaders: false,
+      }),
+    );
+  } else {
+    app.use(
+      rateLimit({
+        windowMs: 60 * 1000,
+        max: 2000,
+        standardHeaders: true,
+        legacyHeaders: false,
+      }),
+    );
+  }
 
   app.get('/health', (_req, res) => {
     res.status(200).json({
