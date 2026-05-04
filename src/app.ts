@@ -21,8 +21,8 @@ function normalizeCorsOrigin(origin: string) {
 export function createApp() {
   const app = express();
   const swaggerDocument = readSwaggerDocument();
-  const swaggerUiDistVersion = '5.10.5';
-  const swaggerJsVersion = '5.10.5';
+  const swaggerUiVersion = '5.32.4';
+  const swaggerCdnBase = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${swaggerUiVersion}`;
   const allowedOrigins = env.corsOrigin === '*'
     ? []
     : env.corsOrigin
@@ -31,7 +31,20 @@ export function createApp() {
       .filter(Boolean);
 
   app.set('trust proxy', 1);
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          fontSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+          connectSrc: ["'self'", 'https:'],
+        },
+      },
+    }),
+  );
   app.use(
     cors({
       origin(origin, callback) {
@@ -71,10 +84,10 @@ export function createApp() {
     swaggerUi.serve,
     swaggerUi.setup(swaggerDocument, {
       explorer: true,
-      customCssUrl: `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerUiDistVersion}/swagger-ui.min.css`,
+      customCssUrl: `${swaggerCdnBase}/swagger-ui.css`,
       customJs: [
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerJsVersion}/swagger-ui-bundle.js`,
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/${swaggerJsVersion}/swagger-ui-standalone-preset.js`,
+        `${swaggerCdnBase}/swagger-ui-bundle.js`,
+        `${swaggerCdnBase}/swagger-ui-standalone-preset.js`,
       ],
       swaggerOptions: {
         persistAuthorization: true,
