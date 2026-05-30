@@ -341,7 +341,7 @@ export class FileAssetsService {
   }
 
   private isImageMetadataKey(key: string) {
-    return /(image|icon|logo|background)$/iu.test(key);
+    return /(image|icon|logo|background|digits)$/iu.test(key);
   }
 
   private isImageCollectionMetadataKey(key: string) {

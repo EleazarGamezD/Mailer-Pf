@@ -10,7 +10,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../../../config/env.js';
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
 import type { FileBinaryPayload } from '../../../core/interfaces/files.js';
-import type { FileProviderContract } from '../fileServiceBase/file-provider.contract.js';
+import type { FileProviderContract, FileUrlOptions } from '../fileServiceBase/file-provider.contract.js';
 
 export class FileSupabaseService implements FileProviderContract {
   readonly storageMode = FileStorageModeEnum.S3;
@@ -49,21 +49,22 @@ export class FileSupabaseService implements FileProviderContract {
     return fileName;
   }
 
-  async getFileUrl(fileName: string): Promise<string | null> {
+  async getFileUrl(fileName: string, options?: FileUrlOptions): Promise<string | null> {
     try {
       await this.client.send(new HeadObjectCommand({
         Bucket: this.bucketName,
         Key: fileName,
       }));
 
-      return await getSignedUrl(
-        this.client,
-        new GetObjectCommand({
-          Bucket: this.bucketName,
-          Key: fileName,
-        }),
-        { expiresIn: 60 * 60 * 24 * 7 },
-      );
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+        ...(options?.forceDownload
+          ? { ResponseContentDisposition: `attachment; filename="${options.downloadName ?? fileName}"` }
+          : {}),
+      });
+
+      return await getSignedUrl(this.client, command, { expiresIn: 60 * 60 * 24 * 7 });
     } catch (error) {
       if (this.isMissingObjectError(error)) {
         return null;

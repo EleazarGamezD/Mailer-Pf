@@ -51,6 +51,10 @@ export class FileBaseService {
     return this.provider.getFileUrl(fileName);
   }
 
+  async getDownloadUrl(fileName: string, downloadName?: string): Promise<string | null> {
+    return this.provider.getFileUrl(fileName, { forceDownload: true, downloadName });
+  }
+
   async deleteFile(fileName: string): Promise<boolean> {
     return this.provider.deleteFile(fileName);
   }

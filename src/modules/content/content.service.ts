@@ -18,6 +18,8 @@ import { buildUniqueTechSkillSlug, normalizeTechSkillLabel } from '../../utils/s
 import { fileService } from '../files/index.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
+const RESUME_FILE_METADATA_KEY = 'resumeFile';
+
 const collectionMap = {
   [ContentResourceEnum.TECH_SKILLS]: new ContentRepository(ContentCollectionEnum.TECH_SKILLS),
   [ContentResourceEnum.EXPERIENCE]: new ContentRepository(ContentCollectionEnum.EXPERIENCE),
@@ -139,6 +141,49 @@ function getMetadataString(metadata: ContentDocument['metadata'] | undefined, ke
   return typeof value === 'string' && value.trim() ? value : '';
 }
 
+function getResumeStoredFileName(metadata: ContentDocument['metadata'] | undefined) {
+  const value = metadata?.[RESUME_FILE_METADATA_KEY];
+
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  if (isJsonObject(value) && typeof value.fileName === 'string' && value.fileName.trim()) {
+    return value.fileName.trim();
+  }
+
+  return null;
+}
+
+function parseUploadedBinary(rawValue: string) {
+  const trimmed = rawValue.trim();
+  const match = /^data:(?<mime>[^;]+);base64,(?<base64>.+)$/u.exec(trimmed);
+
+  if (match?.groups?.base64) {
+    return {
+      mimeType: match.groups.mime,
+      base64: match.groups.base64,
+    };
+  }
+
+  return {
+    mimeType: null,
+    base64: trimmed,
+  };
+}
+
+async function deleteStoredResumeFile(fileName: string | null) {
+  if (!fileName) {
+    return;
+  }
+
+  try {
+    await fileService.deleteFile(fileName);
+  } catch (error) {
+    console.warn(`[content] Failed to delete stored resume file "${fileName}".`, error);
+  }
+}
+
 async function resolveContentItem(resourceName: ContentResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
@@ -164,9 +209,16 @@ async function resolveContentItem(resourceName: ContentResourceName, item: Conte
   }
 
   if (resourceName === ContentResourceEnum.RESUMES) {
+    const storedResumeFileName = getResumeStoredFileName(item.metadata);
+    const originalFileName = getMetadataString(item.metadata, 'originalName') || undefined;
+    const downloadUrl = storedResumeFileName
+      ? await fileService.getDownloadUrl(storedResumeFileName, originalFileName)
+      : null;
+
     return {
       ...item,
       language: getMetadataString(item.metadata, 'language'),
+      href: downloadUrl ?? item.href,
     };
   }
 
@@ -300,6 +352,32 @@ async function normalizeLocalizedContent(
       typeof payload.language === 'string' && payload.language.trim()
         ? payload.language.trim()
         : getMetadataString(normalizedMetadata, 'language') || getMetadataString(defaults.metadata, 'language');
+    const previousStoredResumeFile = getResumeStoredFileName(defaults.metadata);
+    const rawResumeBase64 = typeof payload.base64 === 'string' ? payload.base64.trim() : '';
+    let storedResumeFile = previousStoredResumeFile;
+    let persistedBase64 = rawResumeBase64 || defaults.base64 || '';
+
+    if (rawResumeBase64) {
+      const parsedBinary = parseUploadedBinary(rawResumeBase64);
+      const effectiveMimeType = parsedBinary.mimeType || mimeType || 'application/octet-stream';
+      const extension = getResumeFileExtension(rawFileName, effectiveMimeType);
+      const uploadedFileName = await fileService.uploadFile({
+        name: rawFileName || `resume.${extension}`,
+        originalName: rawFileName || `resume.${extension}`,
+        extension,
+        mimeType: effectiveMimeType,
+        base64: parsedBinary.base64,
+        buffer: Buffer.from(parsedBinary.base64, 'base64'),
+        size: Buffer.byteLength(parsedBinary.base64, 'base64'),
+      });
+
+      if (previousStoredResumeFile && previousStoredResumeFile !== uploadedFileName) {
+        await deleteStoredResumeFile(previousStoredResumeFile);
+      }
+
+      storedResumeFile = uploadedFileName;
+      persistedBase64 = '';
+    }
 
     return {
       key: typeof payload.key === 'string' ? payload.key.trim() : defaults.key,
@@ -319,10 +397,11 @@ async function normalizeLocalizedContent(
       metadata: {
         ...normalizedMetadata,
         language,
+        [RESUME_FILE_METADATA_KEY]: storedResumeFile,
       },
       fileName: buildResumeDownloadFileName(label, title, rawFileName, mimeType),
       mimeType,
-      base64: typeof payload.base64 === 'string' ? payload.base64 : defaults.base64 || '',
+      base64: persistedBase64,
     };
   }
 
@@ -456,10 +535,18 @@ export async function updateContentItem(
 
 export async function deleteContentItem(resourceName: ContentResourceName, id: string) {
   const repository = getRepository(resourceName);
-  const result = await repository.deleteById(parseObjectId(id));
+  const objectId = parseObjectId(id);
+  const existing = resourceName === ContentResourceEnum.RESUMES
+    ? await repository.findOne({ _id: objectId })
+    : null;
+  const result = await repository.deleteById(objectId);
 
   if (!result.deletedCount) {
     throw createHttpError(404, 'Content item not found.');
+  }
+
+  if (resourceName === ContentResourceEnum.RESUMES) {
+    await deleteStoredResumeFile(getResumeStoredFileName(existing?.metadata));
   }
 
   return { deleted: true };
