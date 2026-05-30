@@ -10,7 +10,6 @@ translateRouter.post(
   '/',
   requireApiKey,
   asyncHandler(async (req, res) => {
-    console.log('Received translation request:', req.body);
     const result = await translateText(req.body as TranslateRequest);
     res.json(result);
   }),
