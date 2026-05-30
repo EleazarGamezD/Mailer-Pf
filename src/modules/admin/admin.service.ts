@@ -781,27 +781,92 @@ export async function seedInitialContent() {
   return seedStarterContent();
 }
 
-export async function seedDefaultThemes() {
+export async function seedDefaultThemes(force = false) {
   const db = getDatabase();
   const themesCollection = db.collection(DatabaseCollectionEnum.THEMES);
 
-  const existing = await themesCollection.countDocuments();
-  if (existing > 0) {
-    console.log('[seed] Themes already seeded, skipping.');
-    return { seeded: false, reason: 'already_seeded' };
+  if (!force) {
+    const existing = await themesCollection.countDocuments();
+    if (existing > 0) {
+      console.log('[seed] Themes already seeded, skipping.');
+      return { seeded: false, reason: 'already_seeded' };
+    }
+  } else {
+    await themesCollection.deleteMany({});
+    console.log('[seed] Force mode: deleted existing themes.');
   }
 
   const now = new Date();
   const themes = [
-    { name: 'Azul Eléctrico', active: true, colors: { baseColor: '#2946f3' } },
-    { name: 'Carmesí', active: false, colors: { baseColor: '#e83a3a' } },
-    { name: 'Verde Esmeralda', active: false, colors: { baseColor: '#1a9e5c' } },
-    { name: 'Violeta Real', active: false, colors: { baseColor: '#7c3aed' } },
-    { name: 'Naranja Solar', active: false, colors: { baseColor: '#ef7c1a' } },
+    {
+      name: 'Carmesí',
+      active: true,
+      colors: {
+        baseColor: '#c84b31',
+        veryLightGray: '#ecf0f1',
+        darkGray: '#2e4052',
+        mediumGray: '#7f8c8d',
+        lightMediumGray: '#bdc3c7',
+        altFont: '"Rufina", serif',
+        primaryFont: '"Jost", sans-serif',
+      },
+    },
+    {
+      name: 'Azul Eléctrico',
+      active: false,
+      colors: {
+        baseColor: '#2946f3',
+        veryLightGray: '#eef1fd',
+        darkGray: '#1a2040',
+        mediumGray: '#5a6080',
+        lightMediumGray: '#b0b8d8',
+        altFont: '"Playfair Display", serif',
+        primaryFont: '"Inter", sans-serif',
+      },
+    },
+    {
+      name: 'Verde Esmeralda',
+      active: false,
+      colors: {
+        baseColor: '#1a9e5c',
+        veryLightGray: '#f0faf5',
+        darkGray: '#1a2e22',
+        mediumGray: '#5a7a65',
+        lightMediumGray: '#b2d4bd',
+        altFont: '"Rufina", serif',
+        primaryFont: '"Plus Jakarta Sans", sans-serif',
+      },
+    },
+    {
+      name: 'Violeta Real',
+      active: false,
+      colors: {
+        baseColor: '#7c3aed',
+        veryLightGray: '#f5f0fe',
+        darkGray: '#2e1a4a',
+        mediumGray: '#7c6b8d',
+        lightMediumGray: '#c4b3d9',
+        altFont: '"Playfair Display", serif',
+        primaryFont: '"Poppins", sans-serif',
+      },
+    },
+    {
+      name: 'Naranja Solar',
+      active: false,
+      colors: {
+        baseColor: '#ef7c1a',
+        veryLightGray: '#fef5ec',
+        darkGray: '#2d1f0a',
+        mediumGray: '#8a6847',
+        lightMediumGray: '#d4b896',
+        altFont: '"Oswald", sans-serif',
+        primaryFont: '"Lato", sans-serif',
+      },
+    },
   ].map((t) => ({ ...t, createdAt: now, updatedAt: now }));
 
   await themesCollection.insertMany(themes);
-  console.log('[seed] Inserted 5 default themes.');
+  console.log(`[seed] Inserted ${themes.length} default themes.`);
 
   return { seeded: true, count: themes.length };
 }

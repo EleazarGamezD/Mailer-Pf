@@ -134,11 +134,12 @@ adminRouter.post(
 adminRouter.post(
   '/seed-themes',
   requireApiKey,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
     // #swagger.summary = 'Seed default themes'
-    const result = await seedDefaultThemes();
+    const force = req.query.force === 'true';
+    const result = await seedDefaultThemes(force);
     res.status(200).json({
       message: 'Themes seed executed.',
       ...result,

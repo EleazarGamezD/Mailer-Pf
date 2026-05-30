@@ -1,4 +1,5 @@
 import type { ThemeDocument, ThemePayload } from '../../core/interfaces/theme.js';
+import { DEFAULT_THEME_COLORS } from '../../core/interfaces/theme.js';
 import { ThemesRepository } from '../../repositories/themes.repository.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { parseObjectId } from '../../utils/object-id.js';
@@ -21,7 +22,14 @@ export async function createTheme(payload: ThemePayload): Promise<ThemeDocument>
   const doc: Omit<ThemeDocument, '_id'> = {
     name: payload.name.trim(),
     active: false,
-    colors: { baseColor: payload.colors.baseColor.trim() },
+    colors: {
+      ...DEFAULT_THEME_COLORS,
+      ...Object.fromEntries(
+        Object.entries(payload.colors ?? {})
+          .filter(([_, v]) => typeof v === 'string' && v.trim() !== '')
+          .map(([k, v]) => [k, (v as string).trim()])
+      ),
+    },
     createdAt: now,
     updatedAt: now,
   };
@@ -37,8 +45,16 @@ export async function updateTheme(id: string, payload: ThemePayload): Promise<Th
 
   const update: Partial<ThemeDocument> = { updatedAt: new Date() };
   if (payload.name?.trim()) update.name = payload.name.trim();
-  if (payload.colors?.baseColor?.trim()) {
-    update.colors = { baseColor: payload.colors.baseColor.trim() };
+  if (payload.colors && Object.keys(payload.colors).length > 0) {
+    update.colors = {
+      ...DEFAULT_THEME_COLORS,
+      ...existing.colors,
+      ...Object.fromEntries(
+        Object.entries(payload.colors)
+          .filter(([_, v]) => typeof v === 'string' && v.trim() !== '')
+          .map(([k, v]) => [k, (v as string).trim()])
+      ),
+    };
   }
 
   const updated = await themesRepository.updateById(objectId, update);
