@@ -781,6 +781,31 @@ export async function seedInitialContent() {
   return seedStarterContent();
 }
 
+export async function seedDefaultThemes() {
+  const db = getDatabase();
+  const themesCollection = db.collection(DatabaseCollectionEnum.THEMES);
+
+  const existing = await themesCollection.countDocuments();
+  if (existing > 0) {
+    console.log('[seed] Themes already seeded, skipping.');
+    return { seeded: false, reason: 'already_seeded' };
+  }
+
+  const now = new Date();
+  const themes = [
+    { name: 'Azul Eléctrico', active: true, colors: { baseColor: '#2946f3' } },
+    { name: 'Carmesí', active: false, colors: { baseColor: '#e83a3a' } },
+    { name: 'Verde Esmeralda', active: false, colors: { baseColor: '#1a9e5c' } },
+    { name: 'Violeta Real', active: false, colors: { baseColor: '#7c3aed' } },
+    { name: 'Naranja Solar', active: false, colors: { baseColor: '#ef7c1a' } },
+  ].map((t) => ({ ...t, createdAt: now, updatedAt: now }));
+
+  await themesCollection.insertMany(themes);
+  console.log('[seed] Inserted 5 default themes.');
+
+  return { seeded: true, count: themes.length };
+}
+
 function sanitizeAdminUser(adminUser: AdminUserDocument | null) {
   if (!adminUser) {
     return null;

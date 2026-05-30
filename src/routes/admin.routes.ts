@@ -14,6 +14,7 @@ import {
   getAdminUserById,
   listAdminUsers,
   loginAdminUser,
+  seedDefaultThemes,
   seedDemoPersonalContent,
   seedStarterContent,
   updateAdminUser,
@@ -120,8 +121,26 @@ adminRouter.post(
       ? await seedDemoPersonalContent()
       : await seedStarterContent();
 
+    const themesResult = await seedDefaultThemes();
+
     res.status(200).json({
       message: 'Initial seed executed successfully.',
+      ...result,
+      themes: themesResult,
+    });
+  }),
+);
+
+adminRouter.post(
+  '/seed-themes',
+  requireApiKey,
+  asyncHandler(async (_req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "ApiKeyAuth": [] }]
+    // #swagger.summary = 'Seed default themes'
+    const result = await seedDefaultThemes();
+    res.status(200).json({
+      message: 'Themes seed executed.',
       ...result,
     });
   }),

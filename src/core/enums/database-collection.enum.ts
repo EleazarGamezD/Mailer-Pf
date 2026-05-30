@@ -3,4 +3,5 @@ export enum DatabaseCollectionEnum {
   PROFILE = 'profile',
   ANALYTICS_EVENTS = 'analytics_events',
   ADMIN_USERS = 'admin_users',
+  THEMES = 'themes',
 }
