@@ -151,7 +151,19 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
           pipeline: [
             {
               $match: {
-                $expr: { $eq: [{ $toString: '$_id' }, '$$projectId'] },
+                $expr: {
+                  $eq: [
+                    '$_id',
+                    {
+                      $convert: {
+                        input: '$$projectId',
+                        to: 'objectId',
+                        onError: null,
+                        onNull: null,
+                      },
+                    },
+                  ],
+                },
               },
             },
             { $project: { _id: 0, titleEs: '$title.es' } },
@@ -164,7 +176,67 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
           _id: 1,
           total: 1,
           projectName: {
-            $ifNull: [{ $arrayElemAt: ['$projectDocs.titleEs', 0] }, '$_id'],
+            $ifNull: [{ $arrayElemAt: ['$projectDocs.titleEs', 0] }, 'Proyecto desconocido'],
+          },
+        },
+      },
+      {
+        $match: { _id: { $ne: null } },
+      },
+    ])
+    .toArray();
+
+  const allProjectViews = await database
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
+    .aggregate<{ _id: string | null; projectName: string; total: number }>([
+      {
+        $match: {
+          ...matchFilter,
+          projectId: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$projectId',
+          total: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { total: -1 },
+      },
+      {
+        $lookup: {
+          from: DatabaseCollectionEnum.PROJECTS,
+          let: { projectId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [
+                    '$_id',
+                    {
+                      $convert: {
+                        input: '$$projectId',
+                        to: 'objectId',
+                        onError: null,
+                        onNull: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 0, titleEs: '$title.es' } },
+          ],
+          as: 'projectDocs',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          projectName: {
+            $ifNull: [{ $arrayElemAt: ['$projectDocs.titleEs', 0] }, 'Proyecto desconocido'],
           },
         },
       },
@@ -218,6 +290,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     groupedTotals,
     groupedByPath,
     groupedByProject,
+    allProjectViews,
     groupedByLanguage,
     groupedByDay,
     recentEvents,

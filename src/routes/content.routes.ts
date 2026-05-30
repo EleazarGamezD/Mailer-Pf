@@ -15,6 +15,7 @@ import {
   updateContentItem,
   upsertProfile,
 } from '../modules/content/content.service.js';
+import { generateCvPdf } from '../modules/content/cv-pdf.service.js';
 
 export const contentRouter = Router();
 
@@ -33,6 +34,20 @@ contentRouter.put(
     // #swagger.tags = ['Content']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
     res.json(await upsertProfile(req.body as ProfilePayload));
+  }),
+);
+
+contentRouter.get(
+  '/resumes/generate-pdf',
+  asyncHandler(async (req, res) => {
+    // #swagger.tags = ['Content']
+    const lang = req.query['lang'] === 'en' ? 'en' : 'es';
+    const pdfBuffer = await generateCvPdf(lang);
+    const fileName = lang === 'en' ? 'resume-en.pdf' : 'cv-es.pdf';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
   }),
 );
 
