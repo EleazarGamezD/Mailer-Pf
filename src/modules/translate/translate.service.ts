@@ -14,7 +14,7 @@ export async function translateText(request: TranslateRequest): Promise<Translat
   if (!text?.trim()) {
     throw createHttpError(400, 'text is required.');
   }
-
+  console.log(`Translating text: "${text}" from "${from}" to "${to}"`);
   const { data } = await axios.get<unknown[][]>(GOOGLE_TRANSLATE_URL, {
     params: {
       client: 'gtx',
@@ -24,6 +24,11 @@ export async function translateText(request: TranslateRequest): Promise<Translat
       q: text.trim(),
     },
     timeout: 8000,
+  }).catch((error) => {
+    if (axios.isAxiosError(error)) {
+      throw createHttpError(502, `Translation service error: ${error.message}`);
+    }
+    throw createHttpError(500, 'Unexpected error during translation.');
   });
 
   if (!Array.isArray(data?.[0])) {
