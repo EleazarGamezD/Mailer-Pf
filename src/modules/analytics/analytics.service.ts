@@ -128,7 +128,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
 
   const groupedByProject = await database
     .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
-    .aggregate<{ _id: string | null; total: number }>([
+    .aggregate<{ _id: string | null; projectName: string; total: number }>([
       {
         $match: matchFilter,
       },
@@ -143,6 +143,30 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
       },
       {
         $limit: 10,
+      },
+      {
+        $lookup: {
+          from: DatabaseCollectionEnum.PROJECTS,
+          let: { projectId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: [{ $toString: '$_id' }, '$$projectId'] },
+              },
+            },
+            { $project: { _id: 0, titleEs: '$title.es' } },
+          ],
+          as: 'projectDocs',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          projectName: {
+            $ifNull: [{ $arrayElemAt: ['$projectDocs.titleEs', 0] }, '$_id'],
+          },
+        },
       },
     ])
     .toArray();
@@ -165,6 +189,29 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     ])
     .toArray();
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+
+  const groupedByDay = await database
+    .collection<AnalyticsEventDocument>(DatabaseCollectionEnum.ANALYTICS_EVENTS)
+    .aggregate<{ _id: string; total: number }>([
+      {
+        $match: matchFilter,
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          total: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ])
+    .toArray();
+
   return {
     filters: matchFilter,
     totalEvents,
@@ -172,6 +219,7 @@ export async function getDashboardMetrics(filters: AnalyticsFiltersPayload = {})
     groupedByPath,
     groupedByProject,
     groupedByLanguage,
+    groupedByDay,
     recentEvents,
   };
 }
