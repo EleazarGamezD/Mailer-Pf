@@ -5,6 +5,7 @@ import {
   activateTheme,
   createTheme,
   deleteTheme,
+  generatePalette,
   getActiveTheme,
   listThemes,
   updateTheme,
@@ -26,6 +27,16 @@ themesRouter.get(
   asyncHandler(async (_req, res) => {
     const theme = await getActiveTheme();
     res.json(theme);
+  }),
+);
+
+themesRouter.get(
+  '/generate-palette',
+  requireApiKey,
+  asyncHandler(async (req, res) => {
+    const hex = typeof req.query.hex === 'string' ? req.query.hex : '';
+    const mode = typeof req.query.mode === 'string' ? req.query.mode : 'analogic-complement';
+    res.json(await generatePalette(hex, mode));
   }),
 );
 
