@@ -8,7 +8,6 @@ import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enu
 import { ProfileKeyEnum } from '../../core/enums/profile-key.enum.js';
 import { ProjectStatusEnum } from '../../core/enums/project-status.enum.js';
 import type { AdminUserDocument } from '../../core/interfaces/domain.js';
-import { fileService } from '../files/index.js';
 import type {
   CreateAdminUserPayload,
   LoginAdminUserPayload,
@@ -19,10 +18,15 @@ import { parseEnumValue } from '../../utils/enum.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { signAdminToken } from '../../utils/jwt.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
+import { fileService } from '../files/index.js';
 
 const adminUsersRepository = new AdminUsersRepository();
 
-const backendSeedAssetRoot = new URL('../../../../Mailer-Pf/src/assets/seed-media/', import.meta.url);
+// Seed assets live inside the backend repo at src/assets/seed-media/.
+// import.meta.url resolves relative to the compiled file location:
+//   - tsx dev  → src/modules/admin/admin.service.ts  → ../../assets/seed-media/ = src/assets/seed-media/
+//   - node dist → dist/modules/admin/admin.service.js → ../../assets/seed-media/ = dist/assets/seed-media/
+const backendSeedAssetRoot = new URL('../../assets/seed-media/', import.meta.url);
 
 const mimeTypeByExtension: Record<string, string> = {
   svg: 'image/svg+xml',
@@ -62,9 +66,9 @@ async function uploadSvgPlaceholder(label: string, width = 1200, height = 800) {
       <rect width="${width}" height="${height}" fill="url(#bg)"/>
       <rect x="24" y="24" width="${width - 48}" height="${height - 48}" rx="28" fill="none" stroke="#7b8aa0" stroke-width="4" stroke-dasharray="16 10"/>
       <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#28476f" font-family="Arial, sans-serif" font-size="${Math.max(
-        26,
-        Math.floor(width / 16),
-      )}" font-weight="700">${label}</text>
+    26,
+    Math.floor(width / 16),
+  )}" font-weight="700">${label}</text>
     </svg>
   `.trim();
   const buffer = Buffer.from(svg, 'utf-8');
