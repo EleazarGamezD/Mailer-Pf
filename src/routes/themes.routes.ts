@@ -36,7 +36,8 @@ themesRouter.get(
   asyncHandler(async (req, res) => {
     const hex = typeof req.query.hex === 'string' ? req.query.hex : '';
     const mode = typeof req.query.mode === 'string' ? req.query.mode : 'analogic-complement';
-    res.json(await generatePalette(hex, mode));
+    const seed = typeof req.query.seed === 'string' ? req.query.seed : '';
+    res.json(await generatePalette(hex, mode, seed));
   }),
 );
 

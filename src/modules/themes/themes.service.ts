@@ -59,24 +59,99 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${rr.toString(16).padStart(2, '0')}${gg.toString(16).padStart(2, '0')}${bb.toString(16).padStart(2, '0')}`;
 }
 
-function lightenToBackground(hex: string): string {
-  const [h, s, l] = hexToHsl(hex);
-  return hslToHex(h, Math.min(s, 20), Math.max(l, 88));
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
-function darkenForText(hex: string): string {
-  const [h, s, l] = hexToHsl(hex);
-  return hslToHex(h, Math.max(s, 20), Math.min(l, 28));
+function normalizeHue(hue: number): number {
+  const normalized = hue % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
 }
 
-function desaturateForBorder(hex: string): string {
-  const [h, s, l] = hexToHsl(hex);
-  return hslToHex(h, Math.min(s, 15), Math.min(Math.max(l, 72), 82));
+function mixHues(firstHue: number, secondHue: number, weight = 0.5): number {
+  const firstRadians = (normalizeHue(firstHue) * Math.PI) / 180;
+  const secondRadians = (normalizeHue(secondHue) * Math.PI) / 180;
+  const x = Math.cos(firstRadians) * weight + Math.cos(secondRadians) * (1 - weight);
+  const y = Math.sin(firstRadians) * weight + Math.sin(secondRadians) * (1 - weight);
+  return normalizeHue(Math.round((Math.atan2(y, x) * 180) / Math.PI));
+}
+
+function createSeededRandom(seedValue: string): () => number {
+  let seed = 0;
+
+  for (let index = 0; index < seedValue.length; index += 1) {
+    seed = (seed * 31 + seedValue.charCodeAt(index)) >>> 0;
+  }
+
+  if (seed === 0) {
+    seed = 0x9e3779b9;
+  }
+
+  return () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+}
+
+function varyHue(hex: string, random: () => number, range: number): number {
+  const [h] = hexToHsl(hex);
+  const offset = (random() * 2 - 1) * range;
+  return normalizeHue(Math.round(h + offset));
+}
+
+function buildBackground(baseHex: string, supportHex: string, random: () => number): string {
+  const [baseHue, baseSaturation, baseLightness] = hexToHsl(baseHex);
+  const [supportHue] = hexToHsl(supportHex);
+  const hue = normalizeHue(mixHues(baseHue, supportHue, 0.68) + Math.round((random() * 2 - 1) * 6));
+  return hslToHex(
+    hue,
+    clamp(Math.round(baseSaturation * 0.14), 8, 18),
+    clamp(Math.round(94 + random() * 2 + baseLightness * 0.02), 93, 97),
+  );
+}
+
+function buildDarkText(baseHex: string, supportHex: string, random: () => number): string {
+  const [baseHue, , baseLightness] = hexToHsl(baseHex);
+  const [supportHue, supportSaturation, supportLightness] = hexToHsl(supportHex);
+  const hue = normalizeHue(mixHues(supportHue, baseHue, 0.72) + Math.round((random() * 2 - 1) * 8));
+  return hslToHex(
+    hue,
+    clamp(Math.round(supportSaturation * 0.26), 10, 24),
+    clamp(Math.round(18 + random() * 6 + (supportLightness + baseLightness) * 0.03), 18, 28),
+  );
+}
+
+function buildMediumText(baseHex: string, supportHex: string, random: () => number): string {
+  const [baseHue, baseSaturation, baseLightness] = hexToHsl(baseHex);
+  const [supportHue, supportSaturation, supportLightness] = hexToHsl(supportHex);
+  const hue = normalizeHue(mixHues(baseHue, supportHue, 0.5) + Math.round((random() * 2 - 1) * 10));
+  return hslToHex(
+    hue,
+    clamp(Math.round((baseSaturation * 0.16 + supportSaturation * 0.12) / 1.1), 10, 22),
+    clamp(Math.round(44 + random() * 8 + (baseLightness + supportLightness) * 0.05), 44, 58),
+  );
+}
+
+function buildBorder(baseHex: string, supportHex: string, random: () => number): string {
+  const [baseHue, baseSaturation, baseLightness] = hexToHsl(baseHex);
+  const [supportHue, supportSaturation, supportLightness] = hexToHsl(supportHex);
+  const hue = normalizeHue(mixHues(baseHue, supportHue, 0.54) + Math.round((random() * 2 - 1) * 6));
+  return hslToHex(
+    hue,
+    clamp(Math.round((baseSaturation * 0.12 + supportSaturation * 0.1) / 1.05), 8, 18),
+    clamp(Math.round(78 + random() * 5 + (baseLightness + supportLightness) * 0.03), 78, 86),
+  );
+}
+
+function pickPaletteColor(palette: string[], random: () => number, offset = 0): string {
+  const safePalette = palette.length > 0 ? palette : ['#c84b31'];
+  const index = (Math.floor(random() * safePalette.length) + offset) % safePalette.length;
+  return safePalette[index]!;
 }
 
 // ---------------------------------------------------------------------------
 
-export async function generatePalette(hex: string, mode: string): Promise<Partial<ThemeColors>> {
+export async function generatePalette(hex: string, mode: string, seed = ''): Promise<Partial<ThemeColors>> {
   const cleanHex = hex.replace('#', '').toLowerCase();
   if (!/^[0-9a-f]{6}$/.test(cleanHex)) {
     throw createHttpError(400, 'Invalid hex color. Expected 6-character hex without #.');
@@ -86,7 +161,7 @@ export async function generatePalette(hex: string, mode: string): Promise<Partia
     ? (mode as PaletteMode)
     : 'analogic-complement';
 
-  const url = `https://www.thecolorapi.com/scheme?hex=${cleanHex}&mode=${paletteMode}&count=5`;
+  const url = `https://www.thecolorapi.com/scheme?hex=${cleanHex}&mode=${paletteMode}&count=8`;
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
 
   if (!response.ok) {
@@ -96,16 +171,20 @@ export async function generatePalette(hex: string, mode: string): Promise<Partia
   const data = await response.json() as { colors?: Array<{ hex?: { value?: string } }> };
   const palette = (data.colors ?? []).map((c) => c.hex?.value ?? '#cccccc');
 
-  if (palette.length < 5) {
-    throw createHttpError(502, 'Color API returned fewer than 5 colors.');
+  if (palette.length < 3) {
+    throw createHttpError(502, 'Color API returned too few colors.');
   }
 
+  const random = createSeededRandom(`${cleanHex}:${paletteMode}:${seed || Date.now().toString()}`);
+  const baseColor = pickPaletteColor(palette, random);
+  const supportColor = pickPaletteColor(palette, random, 1);
+
   return {
-    baseColor:       palette[0],
-    veryLightGray:   lightenToBackground(palette[1]),
-    darkGray:        darkenForText(palette[2]),
-    mediumGray:      palette[3],
-    lightMediumGray: desaturateForBorder(palette[4]),
+    baseColor,
+    veryLightGray: buildBackground(baseColor, supportColor, random),
+    darkGray: buildDarkText(baseColor, supportColor, random),
+    mediumGray: buildMediumText(baseColor, supportColor, random),
+    lightMediumGray: buildBorder(baseColor, supportColor, random),
   };
 }
 
