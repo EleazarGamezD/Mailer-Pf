@@ -4,164 +4,142 @@
 
 Si otra IA o persona retoma el trabajo, debe leer en este orden:
 
-1. `docs/IMPLEMENTATION_STATUS.md`
+1. `docs/IMPLEMENTATION_STATUS.md` ← este archivo
 2. `docs/ARCHITECTURE.md`
 3. `docs/CONTINUATION.md`
 
-## Estado general
+---
 
-- [x] Auditar frontend y backend existentes.
-- [x] Definir el dominio del portfolio dinámico.
-- [x] Migrar `Mailer-Pf` a TypeScript.
-- [x] Montar Express + MongoDB + Swagger.
-- [x] Dejar seguridad por `x-api-key` en mutaciones públicas de CMS.
-- [x] Exponer endpoints base para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `resumes`, `testimonials`, `analytics`, `contact`.
-- [x] Verificar compilación TypeScript.
-- [x] Verificar arranque real del backend con `GET /health`.
-- [x] Corregir compatibilidad de mail templates para Node 20+.
-- [x] Documentar arquitectura y continuidad.
-- [x] Crear script de seed inicial del contenido hardcodeado.
-- [x] Exponer endpoint admin para ejecutar el seed inicial.
-- [x] Conectar Angular al backend para retirar JSON locales.
-- [x] Migrar `projects`, `about`, `skills`, `experience`, `socialLinks`, `testimonials`, `hero` y `resumes` a consumo real desde API.
-- [x] Eliminar fallbacks `shared/Json/*` del contenido dinámico.
-- [x] Mover interfaces a `src/app/core/interfaces/<modulo>/...`.
-- [x] Eliminar mapeos intermedios en `projects` y `content` services.
-- [ ] Ejecutar seed inicial en el ambiente que se vaya a usar.
-- [x] Terminar detalle de proyecto por `id/slug`.
-- [x] Terminar diseño final de tarjetas dinámicas de proyectos.
-- [x] Crear util frontend para compresión WebP + base64.
-- [ ] Implementar tracking más completo de interacciones.
-- [x] Reemplazar autenticación admin provisional por `admin users + JWT`.
-- [x] Crear acceso oculto en header desktop y mobile.
-- [x] Construir login admin SSR-safe.
-- [x] Construir dashboard admin con tablas y vistas de edición.
-- [x] Migrar el shell visual del admin a CoreUI manteniendo intacta la UI pública.
-- [ ] Implementar traducción automática real al inglés para contenido dinámico.
+## Estado general — Funcionalidades completas ✅
+
+### Core del portfolio dinámico
+
+- [x] Migrar `Mailer-Pf` a TypeScript con Express + MongoDB + Swagger.
+- [x] Endpoints CRUD para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `resumes`, `testimonials`, `analytics`, `contact`.
+- [x] Angular 19 frontend consumiendo toda la API (sin JSONs locales).
+- [x] Footer dinámico: nombre del usuario (izquierda) + "Made with ♥ by Eleazar Gámez" (derecha).
+- [x] Detalle de proyectos con banner del proyecto, galería de imágenes y chips tecnológicos.
+- [x] Formulario de contacto con reCAPTCHA y plantillas de correo propias.
+- [x] CV dinámico generado en PDF desde los datos del portfolio (español e inglés).
+- [x] Descarga de CV funcional desde el frontend.
+- [x] Botón de traducción en formularios de CMS (llama a Google Translate API gratuita).
+
+### CMS Administrativo
+
+- [x] Autenticación admin con JWT (login, logout, guard, interceptor).
+- [x] Primer login forzado: bootstrap user → setup-account wizard → eliminación del usuario provisional.
+- [x] Recuperación de contraseña con magic link vía email (expira en 10 minutos).
+- [x] Páginas `admin-login`, `admin-setup-account`, `admin-forgot-password`, `admin-reset-password`.
+- [x] Layout CoreUI con sidebar, header, navegación por rutas reales.
+- [x] CMS responsivo (dark mode, mobile, tablets).
+- [x] Secciones CRUD: `projects`, `profile`, `skills`, `experience`, `testimonials`, `resumes`, `socialLinks`, `users`, `themes`, `analytics`, `danger-zone`.
+- [x] Tablero de proyectos con menú de acciones (gear dropdown: editar / eliminar).
+- [x] Skills management: SkillPicker reutilizable con grid 8 items + paginación.
+- [x] Tech skills en experiencia laboral (almacenadas en `metadata.skillIds`, para CV dinámico).
+- [x] Formularios de creación/edición de skills con foto de tamaño fijo, modo crear y modo editar unificados.
+- [x] Formulario de themes con generación de paleta de colores (palette movida al backend vía `GET /api/themes/generate-palette`).
+- [x] Danger Zone con acciones destructivas: seed inicial del sistema, seed demo personal, reset de themes.
+- [x] Dashboard de analíticas con gráficas (Chart.js) y filtros por rango de fechas.
+
+### Backend — Arquitectura
+
+- [x] TypeScript compilado con `tsc`, assets copiados con `scripts/copy-assets.mjs` post-build.
+- [x] Desplegable en Vercel con `vercel.json` y entrada serverless en `api/index.ts`.
+- [x] Bucket configurable: Supabase Storage (S3-compatible), Amazon S3, Cloudflare R2, MinIO.
+- [x] `seed.service.ts` separado de `admin.service.ts` (seeds en su propio módulo).
+- [x] Seeds con `skillIds`/`primarySkillId` reales en proyectos y `metadata.skillIds` en experiencia.
+- [x] Bootstrap admin creado al correr seed inicial (solo si no existen usuarios admin).
+- [x] `FRONTEND_URL` en env para links en correos de recuperación de contraseña.
+- [x] Colección `password_reset_tokens` en MongoDB para recuperación de contraseña.
+- [x] Scripts `npm run seed:starter` y `npm run seed:personal` listos.
+
+### Documentación
+
+- [x] READMEs detallados para frontend y backend (pensados para usuarios junior / usuarios nuevos).
+- [x] Instrucciones paso a paso: MongoDB Atlas, Supabase Storage, Gmail App Password, reCAPTCHA, Vercel, GitHub Actions.
+
+---
 
 ## Estado por ambiente
 
-### Backend `Mailer-Pf`
+### Backend `Portfolio_backend_v2`
 
-- [x] TypeScript configurado.
-- [x] `dist/` tratado como artefacto compilado.
-- [x] `.env.example` iniciado.
-- [x] Entrada serverless de Vercel corregida para la app Express actual.
-- [x] Swagger configurado y visible en `/docs`.
-- [x] Swagger configurado para persistir `x-api-key`.
-- [x] Repositorios y servicios modularizados.
-- [x] Endpoints CRUD iniciales listos para contenido.
-- [x] Endpoint `POST /api/admin/seed-initial` agregado.
-- [x] Crear colección lógica `admin_users`.
-- [x] Añadir `JWT_SECRET` y expiración configurable.
-- [x] Crear endpoint `POST /api/admin/users` protegido por `x-api-key`.
-- [x] Crear endpoint `POST /api/admin/auth/login`.
-- [x] Crear endpoint `GET /api/admin/me`.
-- [x] Crear middleware Bearer para admin.
-- [ ] Separar claramente rutas `x-api-key` de rutas `JWT`.
-- [ ] Mejorar analytics admin con filtros por `year`, `month`, `day`, `from`, `to`.
-- [ ] Exponer endpoints admin de listados/tablas para contenido dinámico.
-- [ ] Refinar Swagger para reflejar `ApiKeyAuth` y `BearerAuth`.
+- [x] TypeScript + ESM configurado.
+- [x] `dist/` tratado como artefacto compilado; assets copiados post-build.
+- [x] `.env.example` con todas las variables documentadas.
+- [x] Vercel entry (`api/index.ts`) con lazy DB connection.
+- [x] Swagger en `/docs` con `x-api-key` persistido.
+- [x] Repositorios y servicios modularizados por dominio.
+- [x] `admin.service.ts` — solo funciones de auth/usuarios (login, createUser, updateUser, setupAccount, requestPasswordReset, resetPasswordWithToken).
+- [x] `seed.service.ts` — toda la lógica de seeds separada.
+- [x] Rutas admin protegidas: `requireApiKey` (seeds, endpoints directos) y `requireAdminAuth` JWT (setup-account, me, etc.).
+- [x] Analytics con filtros por `year`, `month`, `day`, `from`, `to`.
+- [x] Palette generation en backend (`GET /api/themes/generate-palette`).
 
-### Frontend `My-Portfolio`
+### Frontend `Portfolio_frontend_v2`
 
-- [x] Auditados los bloques hardcodeados.
-- [x] Detectados los orígenes de contenido a migrar.
-- [x] Servicios HTTP para `projects`, `profile`, `techSkills`, `experience`, `socialLinks`, `testimonials` y `resumes`.
-- [x] Reemplazo del hardcode del home público por consumo real de API.
-- [x] `x-api-key` agregado globalmente para mutaciones HTTP.
-- [x] Rutas de `contact` y `verify-captcha` alineadas con backend.
-- [x] CVs descargando desde datos devueltos por API.
-- [x] Ajustar `projectDetails` con layout más rico y galería.
-- [x] Enviar `phone` del contacto de frontend a backend.
-- [x] Maquetar correos de contacto con templates reales de portfolio.
-- [x] Reordenar header público con idiomas, redes y acceso admin alineados.
-- [x] Ajustar diseño principal de tarjetas dinámicas de proyectos del home.
-- [ ] Ajustar detalles visuales restantes del home público.
-- [x] Agregar acceso oculto al dashboard en header desktop.
-- [x] Agregar acceso oculto al dashboard en menú mobile.
-- [x] Crear vista `admin-login`.
-- [x] Rehacer `admin-dashboard` con auth JWT y sin acceso directo a storage en SSR.
-- [x] Crear tablas admin para `projects`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y `adminUsers`.
-- [x] Crear formularios admin para CRUD de `projects`, `profile`, `testimonials`, `resumes`, `skills`, `experience`, `socialLinks` y gestión base de `adminUsers`.
-- [x] Montar layout admin CoreUI con sidebar/header y navegación por secciones.
-- [x] Alinear `My-Portfolio` a Angular 21 y al builder moderno usado por `BookingAgency_Frontend_V2`.
-- [ ] Migrar la UX del dashboard al patrón real de `BookingAgency_Frontend_V2/src/app/ui`.
-- [ ] Separar todos los módulos admin en vistas de listado y formularios create/edit por ruta.
+- [x] Angular 19 + SSR (server-side rendering).
+- [x] Consumo de API 100% dinámico (sin fallbacks a JSONs locales).
+- [x] Entornos configurados: `environment.local.ts`, `environment.ts`, `environment.prod.ts`.
+- [x] Script `npm run config` genera los environments desde variables del sistema (usado en CI/CD).
+- [x] GitHub Actions workflow (`.github/workflows/build-prod.yml`) despliega a Vercel en push a `master`.
+- [x] CMS con layout CoreUI: sidebar, header, rutas por sección.
+- [x] Todas las secciones del CMS tienen lista separada + formulario create/edit por ruta.
+- [x] `SkillPickerComponent` reutilizable (usado en projects y experience).
+- [x] `AdminAuthService` con `login`, `setupAccount`, `forgotPassword`, `resetPassword`.
+- [x] Guard `adminAuthGuard` protege el dashboard; rutas de setup/recovery son públicas.
+
+---
+
+## Pendientes conocidos
+
+- [ ] `Ejecutar seed inicial en el ambiente de producción` — acción manual, hacerlo vía Danger Zone del CMS o endpoint `POST /api/admin/seed-initial`.
+- [ ] `Implementar tracking más completo de interacciones` — actualmente se registra visita a la página; clicks en CTAs, tiempo en sección, etc. no están implementados.
+- [ ] `Ajustar detalles visuales restantes del home público` — pequeños detalles de animaciones/transiciones en el portfolio público.
+- [ ] `Refinar Swagger para documentar ApiKeyAuth vs BearerAuth` — el Swagger actual no diferencia claramente qué endpoints usan API key vs JWT.
+- [ ] `TTL index en password_reset_tokens` — crear índice TTL en MongoDB para limpiar tokens expirados automáticamente (actualmente se validan en código pero no se borran solos).
+
+---
 
 ## Hallazgos importantes
 
-- El login admin real ya usa JWT y el dashboard Angular ya no depende de `sessionStorage`/`localStorage` directos.
-- `GET /api/admin/dashboard/metrics` ya soporta filtros por `year`, `month`, `day`, `from`, `to` y el dashboard los consume.
-- El backend desplegado en Vercel debe redeployarse para exponer las rutas nuevas.
-- El prerender de Angular sigue registrando `404` contra `https://mailer-pf.vercel.app/api/...` mientras Vercel sirva la versión vieja del backend.
-- El header público ya usa un grupo de acciones explícito para idioma, redes y acceso admin; no debe volver a depender de estilos genéricos heredados del template.
-- La migración visual del admin cambió de criterio: la UI pública sigue igual y solo el admin debe converger al dashboard CoreUI.
-- Ya existe una base frontend para el pipeline de imágenes embebidas (`base64/webp`) inspirada en `BookingAgency_Frontend_V2`, y la referencia correcta para el dashboard quedó redefinida: la UX debe copiar `src/app/ui`, no `template`.
-- El backend ya necesita consolidar un `file service` global para imágenes persistidas en MongoDB; MinIO/bucket no forma parte del alcance aprobado actual.
-- El dashboard admin viejo fue eliminado y reemplazado por páginas hijas reales bajo el shell CoreUI con un facade compartido.
-- `My-Portfolio` ya corre sobre Angular 21 + `@angular/build` + SSR/prerender actualizado; `main.server.ts` y `app.config.server.ts` se adaptaron al contrato nuevo (`BootstrapContext`, `provideServerRendering(withRoutes(...))`).
-- La única dependencia todavía fuera de línea respecto a Angular 21 es `ng-recaptcha`, que sigue funcionando en build con instalación flexible pero conviene reemplazar o aislar en una iteración posterior.
+- **Seed assets**: Los assets del seed están en `src/assets/seed-media/`. El script `scripts/copy-assets.mjs` los copia a `dist/assets/` después del build (TypeScript no copia archivos no-TS). En Vercel, el deploy incluye `dist/` completo.
+- **SkillIds en experience**: Los tech skills de una experiencia se almacenan en `metadata.skillIds: string[]` (NOT campo top-level) porque `ContentDocument.metadata` es el campo flexible de ese modelo. El backend no necesita cambios para esto — `ContentPayload.metadata` fluye sin transformación para el tipo EXPERIENCE.
+- **Primer login flow**: El seed `starter` crea un usuario bootstrap con `mustChangePassword: true`. Al loguearse, el backend devuelve `mustChangePassword: true` en la respuesta. El frontend detecta eso y redirige a `/admin/setup-account`. Al completar setup, se crea el usuario real, se borra el bootstrap y se emite un nuevo JWT.
+- **Paleta de colores**: La generación de paleta se movió al backend para consumir `thecolorapi.com`. URL: `GET /api/themes/generate-palette?hex=XXXXXX&mode=analogic-complement`. El frontend llama a `ThemeService.generatePalette()` que internamente usa `GlobalHttpService`.
+- **Builds**: Siempre verificar que backend (`npm run build`) y frontend (`ng build`) pasen antes de hacer deploy. El frontend tiene warnings esperados de SSR/Bootstrap que son normales.
+- **CoreUI theming**: Los estilos de tema globales van en `_custom.scss`. NUNCA en los SCSS de componentes. Esta regla es crítica para mantener la consistencia del dark/light mode.
+
+---
 
 ## Comandos validados
 
 ```bash
+# Backend
+cd Portfolio_backend_v2
 npm install
-npm run build
-npm run docs:generate
-npm run seed:initial
-node dist/index.js
+npm run build        # tsc + copy-assets
+npm run dev          # servidor con hot reload
+npm run seed:starter # seed inicial del sistema
+npm run seed:personal # seed con contenido demo personal
+
+# Frontend
+cd Portfolio_frontend_v2
+npm install --legacy-peer-deps
+npm run local   # serve con environment local
+npm run build   # build de producción
+npm run config  # genera environments desde vars del sistema (usado en CI)
 ```
 
 ## Verificaciones reales ya hechas
 
 - `GET /health` responde `200`.
-- El backend compila en TypeScript.
-- Swagger abre y persiste `x-api-key`.
-- El endpoint `POST /api/admin/seed-initial` existe.
-- El frontend Angular compila tras migrar el contenido dinámico público.
-- El detalle de proyecto ya renderiza media, chips tecnológicos, CTAs y galería desde DTO real.
-- El flujo de contacto ya envía `phone` de extremo a extremo y usa plantillas de correo propias.
-- El admin Angular ya separa `admin/login` de `admin/dashboard`, protege el dashboard con guard y consume métricas admin con filtros.
-- El dashboard admin ya permite CRUD para `projects`, `profile`, `techSkills`, `experience`, `testimonials`, `resumes` y `socialLinks`.
-- La sección `resumes` ya soporta alta con archivo y reemplazo de archivo existente mediante `base64`, `fileName` y `mimeType`.
-- El dashboard admin ya incluye tabla de `adminUsers` con edición base de `displayName`, `role` y `active` usando Bearer auth.
-- `projects` dejó de ser válido como editor inline dentro de la tabla; el criterio actualizado exige listado Booking-style y formulario separado para create/edit.
-- El `admin-dashboard` ya quedó dividido en subcomponentes standalone para `overview`, `projects`, `profile`, `skills`, `experience`, `testimonials`, `resumes`, `socialLinks` y `users`.
-- El slider público de proyectos ya no usa la card vieja del template y quedó reemplazado por una card propia basada en DTO real.
-
-## Próxima fase en curso
-
-### Fase admin/auth
-
-- [x] Documentación corregida al nuevo criterio
-- [x] Dependencias/env para JWT
-- [x] Modelo y repositorio `admin_users`
-- [x] Endpoints `create admin user`, `login`, `me`
-- [x] Middleware Bearer
-- [x] Header oculto desktop/mobile
-- [x] Login admin SSR-safe
-
-### Fase dashboard
-
-- [x] Métricas con filtros por rango
-- [x] Tablas admin por módulo
-- [x] Formularios CRUD por módulo
-- [x] Integración Angular con token Bearer
-- [x] Mejorar edición avanzada de proyectos e imágenes
-- [x] Dividir el dashboard en subcomponentes para reducir el tamaño del componente monolítico
-- [x] Reemplazar el shell del admin por layout CoreUI y mover la navegación a rutas reales por sección
-- [x] Subir la base del frontend a Angular 21 para converger con `BookingAgency_Frontend_V2`
-- [ ] Rehacer `projects` al patrón Booking-style con lista separada, menú de acciones y formulario por ruta
-- [ ] Replicar ese patrón en `content`, `profile`, `resumes` y `users`
-
-Estado actual de esa división:
-- [x] `overview`
-- [x] `profile`
-- [x] `users`
-- [x] `projects`
-- [x] `skills`
-- [x] `experience`
-- [x] `testimonials`
-- [x] `resumes`
-- [x] `socialLinks`
+- Backend y frontend compilan sin errores TypeScript.
+- Swagger abre en `/docs` y persiste `x-api-key`.
+- Login admin con JWT funciona end-to-end.
+- CMS CRUD completo para todas las secciones.
+- CV PDF generado dinámicamente desde datos del portfolio.
+- Formulario de contacto con reCAPTCHA envía correos reales.
+- Seeds corren correctamente con skillIds resueltos.
+- `seed.service.ts` separado; backend compila con la separación (`npm run build` ✅ exit 0).
+- READMEs actualizados con instrucciones de despliegue paso a paso.

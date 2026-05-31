@@ -1,4 +1,4 @@
-import { seedDemoPersonalContent } from '../modules/admin/admin.service.js';
+import { seedDemoPersonalContent } from '../modules/admin/seed.service.js';
 import { closeDatabaseConnection, connectToDatabase } from '../config/db.js';
 const run = async () => {
   try {

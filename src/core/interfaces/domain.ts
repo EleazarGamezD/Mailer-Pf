@@ -89,4 +89,17 @@ export interface AdminUserDocument extends BaseEntity {
   role: AdminRoleEnum;
   active: boolean;
   lastLoginAt: Date | null;
+  /** True when this is a temporary bootstrap account that must complete the setup wizard on first login. */
+  mustChangePassword?: boolean;
+}
+
+export interface PasswordResetTokenDocument extends BaseEntity {
+  /** Admin user _id this token belongs to */
+  adminUserId: string;
+  /** Secure random hex token */
+  token: string;
+  /** Absolute expiry timestamp */
+  expiresAt: Date;
+  /** Marked true once the token has been consumed */
+  used: boolean;
 }

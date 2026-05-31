@@ -80,6 +80,7 @@ export const env = {
   mailFrom: readEnv('FROM'),
   mailTo: readEnv('TO'),
   recaptchaSecretKey: readEnv('RECAPTCHA_SECRET_KEY'),
+  frontendUrl: readEnv('FRONTEND_URL', 'http://localhost:4200'),
   autoTranslateToEnglish: readEnv('AUTO_TRANSLATE_TO_ENGLISH', 'false') === 'true',
   s3EndpointRaw: rawS3Endpoint,
   s3Endpoint: normalizedS3Endpoint.host,

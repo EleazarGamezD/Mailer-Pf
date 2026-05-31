@@ -14,11 +14,16 @@ import {
   getAdminUserById,
   listAdminUsers,
   loginAdminUser,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  setupAdminAccount,
+  updateAdminUser,
+} from '../modules/admin/admin.service.js';
+import {
   seedDefaultThemes,
   seedDemoPersonalContent,
   seedStarterContent,
-  updateAdminUser,
-} from '../modules/admin/admin.service.js';
+} from '../modules/admin/seed.service.js';
 import { getDashboardMetrics } from '../modules/analytics/analytics.service.js';
 import { asyncHandler } from '../utils/async-handler.js';
 
@@ -42,6 +47,41 @@ adminRouter.post(
     // #swagger.tags = ['Admin']
     // #swagger.summary = 'Login admin user and get JWT'
     const result = await loginAdminUser(req.body as LoginAdminUserPayload);
+    res.status(200).json(result);
+  }),
+);
+
+adminRouter.post(
+  '/auth/setup-account',
+  requireAdminAuth,
+  asyncHandler(async (req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "BearerAuth": [] }]
+    // #swagger.summary = 'Complete first-time account setup and replace bootstrap user'
+    const adminUser = (req as AuthenticatedAdminRequest).adminUser;
+    const result = await setupAdminAccount(adminUser!.sub, req.body);
+    res.status(200).json(result);
+  }),
+);
+
+adminRouter.post(
+  '/auth/forgot-password',
+  asyncHandler(async (req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.summary = 'Request password reset email (magic link, 10 min)'
+    const { email } = req.body as { email: string };
+    const result = await requestPasswordReset(email ?? '');
+    res.status(200).json(result);
+  }),
+);
+
+adminRouter.post(
+  '/auth/reset-password',
+  asyncHandler(async (req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.summary = 'Reset password using a valid magic link token'
+    const { token, newPassword } = req.body as { token: string; newPassword: string };
+    const result = await resetPasswordWithToken(token ?? '', newPassword ?? '');
     res.status(200).json(result);
   }),
 );
