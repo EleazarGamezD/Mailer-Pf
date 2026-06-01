@@ -8,8 +8,8 @@ import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enu
 import { ProfileKeyEnum } from '../../core/enums/profile-key.enum.js';
 import { ProjectStatusEnum } from '../../core/enums/project-status.enum.js';
 import type { AdminUserDocument, SystemFlagDocument } from '../../core/interfaces/domain.js';
-import { fileService } from '../files/index.js';
 import { hashPassword } from '../../utils/password.js';
+import { fileService } from '../files/index.js';
 
 // Seed assets live inside the backend repo at src/assets/seed-media/.
 // import.meta.url resolves relative to the compiled file location:
