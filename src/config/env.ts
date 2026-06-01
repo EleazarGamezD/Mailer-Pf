@@ -68,7 +68,7 @@ export const env = {
   appPort: Number(readEnv('APP_PORT', '3000')),
   apiBaseUrl: readRequiredEnv('API_BASE_URL'),
   corsOrigin: readEnv('CORS_ORIGIN', '*'),
-  jsonLimit: readEnv('JSON_LIMIT', '12mb'),
+  jsonLimit: readEnv('JSON_LIMIT', '1mb'),
   bucketProvider: parseEnumValue(BucketProviderEnum, readEnv('BUCKET_PROVIDER', BucketProviderEnum.MINIO).toLowerCase(), BucketProviderEnum.MINIO),
   mongoUri: readRequiredEnv('MONGODB_URI'),
   mongoDbName: readEnv('MONGODB_DB_NAME', 'Porfolio'),

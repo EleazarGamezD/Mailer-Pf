@@ -1,3 +1,4 @@
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -31,6 +32,7 @@ export function createApp() {
       .filter(Boolean);
 
   app.set('trust proxy', 1);
+  app.use(compression());
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -83,6 +85,7 @@ export function createApp() {
   }
 
   app.get('/health', (_req, res) => {
+    res.set('Cache-Control', 'no-store');
     res.status(200).json({
       ok: true,
       service: 'portfolio-api',

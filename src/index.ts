@@ -8,6 +8,15 @@ import { connectToDatabase } from './config/db.js';
 import { env } from './config/env.js';
 import { ensureSwaggerDocument } from './docs/swagger.js';
 
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 async function bootstrap() {
   await ensureSwaggerDocument();
   await connectToDatabase();

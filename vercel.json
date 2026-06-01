@@ -11,5 +11,19 @@
       "src": "/(.*)",
       "dest": "api/index.ts"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/(projects|skills|content|themes|socialLinks)(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=60, stale-while-revalidate=300" }
+      ]
+    },
+    {
+      "source": "/health",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
   ]
 }

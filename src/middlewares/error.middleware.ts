@@ -16,9 +16,10 @@ export function errorHandler(
 ) {
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal server error';
+  const isProd = process.env['NODE_ENV'] === 'production';
 
   res.status(statusCode).json({
     message,
-    ...(error.details ? { details: error.details } : {}),
+    ...(!isProd && error.details ? { details: error.details } : {}),
   });
 }
