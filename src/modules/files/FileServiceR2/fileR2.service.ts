@@ -69,8 +69,36 @@ export class FileR2Service implements FileProviderContract {
     }
   }
 
+  async clearBucket(): Promise<number> {
+    const objectNames = await this.listBucketObjectNames();
+
+    for (const objectName of objectNames) {
+      await this.client.removeObject(this.bucketName, objectName);
+    }
+
+    return objectNames.length;
+  }
+
   private normalizeExtension(extension: string | null | undefined) {
     return extension?.trim().replace(/^\./u, '').toLowerCase() || '';
+  }
+
+  private async listBucketObjectNames(): Promise<string[]> {
+    const stream = (this.client as unknown as {
+      listObjectsV2(bucketName: string, prefix: string, recursive: boolean): NodeJS.EventEmitter;
+    }).listObjectsV2(this.bucketName, '', true);
+
+    return await new Promise<string[]>((resolve, reject) => {
+      const objectNames: string[] = [];
+
+      stream.on('data', (entry: { name?: string }) => {
+        if (typeof entry?.name === 'string' && entry.name.trim()) {
+          objectNames.push(entry.name);
+        }
+      });
+      stream.on('end', () => resolve(objectNames));
+      stream.on('error', reject);
+    });
   }
 
   private isMissingObjectError(error: { code?: string } | null | undefined) {

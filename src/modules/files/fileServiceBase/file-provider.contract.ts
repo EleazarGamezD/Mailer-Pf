@@ -10,4 +10,5 @@ export interface FileProviderContract {
   uploadFile(payload: FileBinaryPayload): Promise<string>;
   getFileUrl(fileName: string, options?: FileUrlOptions): Promise<string | null>;
   deleteFile(fileName: string): Promise<boolean>;
+  clearBucket(): Promise<number>;
 }

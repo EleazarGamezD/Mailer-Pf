@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import {
+  DeleteObjectsCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -90,8 +92,48 @@ export class FileSupabaseService implements FileProviderContract {
     }
   }
 
+  async clearBucket(): Promise<number> {
+    const objectNames = await this.listBucketObjectNames();
+
+    if (!objectNames.length) {
+      return 0;
+    }
+
+    await this.client.send(new DeleteObjectsCommand({
+      Bucket: this.bucketName,
+      Delete: {
+        Objects: objectNames.map((Key) => ({ Key })),
+        Quiet: true,
+      },
+    }));
+
+    return objectNames.length;
+  }
+
   private normalizeExtension(extension: string | null | undefined) {
     return extension?.trim().replace(/^\./u, '').toLowerCase() || '';
+  }
+
+  private async listBucketObjectNames(): Promise<string[]> {
+    const objectNames: string[] = [];
+    let continuationToken: string | undefined;
+
+    do {
+      const response = await this.client.send(new ListObjectsV2Command({
+        Bucket: this.bucketName,
+        ContinuationToken: continuationToken,
+      }));
+
+      for (const entry of response.Contents ?? []) {
+        if (typeof entry.Key === 'string' && entry.Key.trim()) {
+          objectNames.push(entry.Key);
+        }
+      }
+
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    return objectNames;
   }
 
   private isMissingObjectError(error: unknown) {

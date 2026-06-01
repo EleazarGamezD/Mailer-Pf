@@ -801,6 +801,14 @@ async function runSeedPreset(preset: SeedPreset) {
     }
   }
 
+  try {
+    console.log('[seed] Clearing storage bucket before uploading seed assets...');
+    const deletedObjects = await fileService.clearBucket();
+    console.log(`[seed] Cleared ${deletedObjects} objects from storage bucket.`);
+  } catch (error) {
+    console.warn('[seed] Unable to clear storage bucket before seed.', error);
+  }
+
   const assets = await loadSeedAssets();
   const bundle = preset === 'demo-personal'
     ? buildDemoPersonalSeedBundle(assets)

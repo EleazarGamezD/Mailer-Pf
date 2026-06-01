@@ -59,6 +59,10 @@ export class FileBaseService {
     return this.provider.deleteFile(fileName);
   }
 
+  async clearBucket(): Promise<number> {
+    return this.provider.clearBucket();
+  }
+
   async normalizeImageAsset(
     payload: string | ImageUploadContract | StoredImageAsset | JsonObject | null | undefined,
     fieldName: string,
