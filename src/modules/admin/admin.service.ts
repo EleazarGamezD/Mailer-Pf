@@ -316,6 +316,15 @@ function createMailTransport() {
   return transport;
 }
 
+function buildAdminFrontendUrl(pathname: string) {
+  const normalizedBase = env.frontendUrl
+    .trim()
+    .replace(/\/+$/u, '')
+    .replace(/\/(?:es|en)$/u, '');
+
+  return `${normalizedBase}${pathname}`;
+}
+
 export async function requestPasswordReset(email: string) {
   const db = getDatabase();
   const user = await db.collection<AdminUserDocument>(DatabaseCollectionEnum.ADMIN_USERS).findOne({
@@ -342,7 +351,7 @@ export async function requestPasswordReset(email: string) {
 
   await db.collection(DatabaseCollectionEnum.PASSWORD_RESET_TOKENS).insertOne(tokenDoc);
 
-  const resetUrl = `${env.frontendUrl}/admin/reset-password?token=${token}`;
+  const resetUrl = `${buildAdminFrontendUrl('/admin/reset-password')}?token=${token}`;
 
   const transport = createMailTransport();
   await transport.sendMail({
