@@ -20,11 +20,10 @@ import {
   updateAdminUser,
 } from '../modules/admin/admin.service.js';
 import {
-  ensureInitialPlatformSetup,
   getInitialSeedStatus,
   seedDefaultThemes,
   seedDemoPersonalContent,
-  seedStarterContent,
+  seedInitialContent,
 } from '../modules/admin/seed.service.js';
 import { getDashboardMetrics } from '../modules/analytics/analytics.service.js';
 import { asyncHandler } from '../utils/async-handler.js';
@@ -167,19 +166,14 @@ adminRouter.get(
 adminRouter.post(
   '/seed-initial',
   requireApiKey,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
-    // #swagger.summary = 'Ensure initial MongoDB seed/bootstrap state'
-    const preset = typeof req.query.preset === 'string' ? req.query.preset : 'starter';
-    const result = await ensureInitialPlatformSetup(
-      preset === 'demo-personal' ? 'demo-personal' : 'starter',
-    );
+    // #swagger.summary = 'Run destructive initial MongoDB seed'
+    const result = await seedInitialContent();
 
     res.status(200).json({
-      message: result.ensured
-        ? 'Initial platform setup ensured successfully.'
-        : 'Initial platform setup was already configured.',
+      message: 'Initial platform seed executed successfully.',
       ...result,
     });
   }),

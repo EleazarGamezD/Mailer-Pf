@@ -150,7 +150,7 @@ interface AdminAccountState {
   hasBootstrapAdmin: boolean;
 }
 
-const collectionsToResetBeforeSeed = [
+const collectionsToResetBeforeSafeSeed = [
   DatabaseCollectionEnum.PROJECTS,
   DatabaseCollectionEnum.PROFILE,
   DatabaseCollectionEnum.ANALYTICS_EVENTS,
@@ -160,6 +160,16 @@ const collectionsToResetBeforeSeed = [
   ContentCollectionEnum.SOCIAL_LINKS,
   ContentCollectionEnum.RESUMES,
 ] as const;
+
+const collectionsToResetBeforeDestructiveSeed = [
+  ...collectionsToResetBeforeSafeSeed,
+  DatabaseCollectionEnum.PASSWORD_RESET_TOKENS,
+  DatabaseCollectionEnum.THEMES,
+] as const;
+
+interface SeedExecutionOptions {
+  destructiveReset?: boolean;
+}
 
 interface SeedAssets {
   angularIcon: string;
@@ -786,13 +796,20 @@ async function createBootstrapAdminIfNeeded() {
   };
 }
 
-async function runSeedPreset(preset: SeedPreset) {
+async function runSeedPreset(
+  preset: SeedPreset,
+  options: SeedExecutionOptions = {},
+) {
   const db = getDatabase();
   const now = new Date();
+  const destructiveReset = options.destructiveReset ?? true;
+  const collectionsToReset = destructiveReset
+    ? collectionsToResetBeforeDestructiveSeed
+    : collectionsToResetBeforeSafeSeed;
 
-  console.log(`[seed] Starting preset: ${preset}`);
+  console.log(`[seed] Starting preset: ${preset} (destructiveReset=${destructiveReset})`);
 
-  for (const collectionName of collectionsToResetBeforeSeed) {
+  for (const collectionName of collectionsToReset) {
     try {
       console.log(`[seed] Clearing collection: ${collectionName}`);
       await db.collection(collectionName).deleteMany({});
@@ -862,8 +879,22 @@ async function runSeedPreset(preset: SeedPreset) {
   console.log('[seed] Inserting profile...');
   await db.collection(DatabaseCollectionEnum.PROFILE).insertOne({ ...bundle.profile, createdAt: now, updatedAt: now });
 
-  if (preset === 'starter') {
-    await createBootstrapAdminIfNeeded();
+  let bootstrapResult: Awaited<ReturnType<typeof createBootstrapAdminIfNeeded>> | null = null;
+
+  if (preset === 'starter' || destructiveReset) {
+    bootstrapResult = await createBootstrapAdminIfNeeded();
+  }
+
+  let themesResult: Awaited<ReturnType<typeof seedDefaultThemes>> | null = null;
+
+  if (destructiveReset) {
+    themesResult = await seedDefaultThemes(true);
+    await upsertInitialPlatformFlag({
+      starterSeedCompleted: true,
+      bootstrapAdminCreated: Boolean(bootstrapResult?.seeded),
+      realAdminConfigured: false,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+    });
   }
 
   console.log(`[seed] Preset completed successfully: ${preset}`);
@@ -879,7 +910,12 @@ async function runSeedPreset(preset: SeedPreset) {
       ContentCollectionEnum.SOCIAL_LINKS,
       ContentCollectionEnum.RESUMES,
       DatabaseCollectionEnum.PROFILE,
+      ...(themesResult?.seeded ? [DatabaseCollectionEnum.THEMES] : []),
+      ...(bootstrapResult?.seeded ? [DatabaseCollectionEnum.ADMIN_USERS] : []),
     ],
+    resetMode: destructiveReset ? 'destructive' : 'safe',
+    themes: themesResult,
+    bootstrapAdmin: bootstrapResult,
   };
 }
 
@@ -1053,7 +1089,7 @@ export async function ensureInitialPlatformSetup(preset: SeedPreset = 'starter')
   let statusBefore = await getInitialSeedStatus();
 
   if (preset !== 'starter') {
-    const result = await seedDemoPersonalContent();
+    const result = await runSeedPreset('demo-personal', { destructiveReset: false });
     return {
       ensured: true,
       action: 'seed_demo_personal',
@@ -1090,7 +1126,7 @@ export async function ensureInitialPlatformSetup(preset: SeedPreset = 'starter')
   statusBefore = await getInitialSeedStatus();
 
   if (statusBefore.shouldRunStarterSeed) {
-    seedResult = await seedStarterContent();
+    seedResult = await runSeedPreset('starter', { destructiveReset: false });
     await upsertInitialPlatformFlag({
       starterSeedCompleted: true,
       bootstrapAdminCreated: true,
