@@ -173,7 +173,7 @@ Deberías ver una respuesta como:
 | `npm run dev` | Inicia el servidor con recarga automática (desarrollo) |
 | `npm run build` | Compila TypeScript a JavaScript en `dist/` |
 | `npm start` | Compila y ejecuta en producción |
-| `npm run seed:starter` | Carga datos iniciales del sistema (ejecutar una sola vez) |
+| `npm run seed:starter` | Fuerza la recarga del seed starter en una base vacía o de pruebas |
 | `npm run seed:personal` | Carga datos de ejemplo personalizados |
 | `npm run docs:generate` | Regenera la documentación Swagger |
 
@@ -364,19 +364,37 @@ Puedes hacerlo desde la documentación Swagger en `https://tu-api.vercel.app/doc
 
 ## 🌱 Seeds (datos iniciales)
 
-Los seeds cargan datos de ejemplo en la base de datos. Úsalos solo en un entorno fresco (base de datos vacía).
+El backend ahora valida automáticamente en el arranque si la plataforma ya fue inicializada. Revisa una bandera persistente en Mongo (`system_flags`) y además reconcilia el estado real de contenido/admins para decidir qué hacer sin intervención manual.
+
+### Inicialización automática desde cero
+
+Cuando levantas el backend contra una base de datos nueva:
+
+1. Si no existe el seed base, el backend ejecuta automáticamente la inicialización starter.
+2. Si no existe un admin real, el backend crea un usuario bootstrap temporal para permitir el primer acceso al dashboard.
+3. En el primer login, ese usuario bootstrap queda obligado a pasar por `setup-account`.
+4. Cuando se registra el usuario real, el backend elimina el usuario bootstrap y marca la plataforma como configurada.
+
+**Credenciales bootstrap por defecto:**
+
+- Email: `admin@portfolio.local`
+- Password: `Admin@1234!`
+
+> ⚠️ Estas credenciales solo deben existir mientras la plataforma no tenga un usuario administrador real. Después del primer `setup-account`, el backend borra automáticamente ese usuario temporal.
+
+Los scripts de seed siguen disponibles para escenarios manuales, pero ya no son necesarios para el primer arranque normal de desarrollo.
 
 **En desarrollo local:**
 
 ```bash
-# Carga el sistema base (usuario admin bootstrap, temas, etc.)
+# Fuerza el seed starter sobre una base de datos fresca o de pruebas
 npm run seed:starter
 
 # Carga contenido de ejemplo personalizado (proyectos, experiencia, skills, etc.)
 npm run seed:personal
 ```
 
-> ⚠️ Los seeds borran y recrean el contenido existente. No los ejecutes en producción si ya tienes datos reales.
+> ⚠️ `npm run seed:starter` y `npm run seed:personal` borran y recrean contenido. No los ejecutes sobre una base con datos reales.
 
 ---
 
