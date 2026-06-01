@@ -7,6 +7,7 @@ import { createApp } from './app.js';
 import { connectToDatabase } from './config/db.js';
 import { env } from './config/env.js';
 import { ensureSwaggerDocument } from './docs/swagger.js';
+import { ensureInitialPlatformSetup } from './modules/admin/seed.service.js';
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
@@ -20,6 +21,7 @@ process.on('uncaughtException', (error) => {
 async function bootstrap() {
   await ensureSwaggerDocument();
   await connectToDatabase();
+  await ensureInitialPlatformSetup();
 
   const app = createApp();
 

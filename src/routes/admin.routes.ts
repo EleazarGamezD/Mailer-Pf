@@ -20,6 +20,8 @@ import {
   updateAdminUser,
 } from '../modules/admin/admin.service.js';
 import {
+  ensureInitialPlatformSetup,
+  getInitialSeedStatus,
   seedDefaultThemes,
   seedDemoPersonalContent,
   seedStarterContent,
@@ -132,6 +134,19 @@ adminRouter.get(
 );
 
 adminRouter.get(
+  '/seed-status',
+  requireApiKey,
+  asyncHandler(async (_req, res) => {
+    // #swagger.tags = ['Admin']
+    // #swagger.security = [{ "ApiKeyAuth": [] }]
+    // #swagger.summary = 'Get initial seed/bootstrap status'
+    const status = await getInitialSeedStatus();
+
+    res.status(200).json(status);
+  }),
+);
+
+adminRouter.get(
   '/dashboard/metrics',
   requireAdminAuth,
   asyncHandler(async (req, res) => {
@@ -155,18 +170,17 @@ adminRouter.post(
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Admin']
     // #swagger.security = [{ "ApiKeyAuth": [] }]
-    // #swagger.summary = 'Run initial MongoDB seed'
+    // #swagger.summary = 'Ensure initial MongoDB seed/bootstrap state'
     const preset = typeof req.query.preset === 'string' ? req.query.preset : 'starter';
-    const result = preset === 'demo-personal'
-      ? await seedDemoPersonalContent()
-      : await seedStarterContent();
-
-    const themesResult = await seedDefaultThemes();
+    const result = await ensureInitialPlatformSetup(
+      preset === 'demo-personal' ? 'demo-personal' : 'starter',
+    );
 
     res.status(200).json({
-      message: 'Initial seed executed successfully.',
+      message: result.ensured
+        ? 'Initial platform setup ensured successfully.'
+        : 'Initial platform setup was already configured.',
       ...result,
-      themes: themesResult,
     });
   }),
 );

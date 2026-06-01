@@ -103,3 +103,11 @@ export interface PasswordResetTokenDocument extends BaseEntity {
   /** Marked true once the token has been consumed */
   used: boolean;
 }
+
+export interface SystemFlagDocument extends BaseEntity {
+  key: string;
+  starterSeedCompleted: boolean;
+  bootstrapAdminCreated: boolean;
+  realAdminConfigured: boolean;
+  bootstrapAdminEmail: string | null;
+}

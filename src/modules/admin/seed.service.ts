@@ -7,7 +7,7 @@ import { ContentCollectionEnum } from '../../core/enums/content-collection.enum.
 import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enum.js';
 import { ProfileKeyEnum } from '../../core/enums/profile-key.enum.js';
 import { ProjectStatusEnum } from '../../core/enums/project-status.enum.js';
-import type { AdminUserDocument } from '../../core/interfaces/domain.js';
+import type { AdminUserDocument, SystemFlagDocument } from '../../core/interfaces/domain.js';
 import { fileService } from '../files/index.js';
 import { hashPassword } from '../../utils/password.js';
 
@@ -119,6 +119,36 @@ startxref
 }
 
 type SeedPreset = 'starter' | 'demo-personal';
+const INITIAL_PLATFORM_SETUP_KEY = 'initial_platform_setup';
+export const BOOTSTRAP_ADMIN_EMAIL = 'admin@portfolio.local';
+const BOOTSTRAP_ADMIN_USERNAME = 'admin';
+const BOOTSTRAP_ADMIN_PASSWORD = 'Admin@1234!';
+
+export interface InitialSeedStatus {
+  flagsPresent: boolean;
+  hasAdminUsers: boolean;
+  hasRealAdminUsers: boolean;
+  hasBootstrapAdmin: boolean;
+  hasThemes: boolean;
+  hasProjects: boolean;
+  hasProfile: boolean;
+  hasTechSkills: boolean;
+  hasExperience: boolean;
+  hasTestimonials: boolean;
+  hasSocialLinks: boolean;
+  hasResumes: boolean;
+  hasStarterContent: boolean;
+  isFullyConfigured: boolean;
+  shouldRunStarterSeed: boolean;
+  shouldCreateBootstrapAdmin: boolean;
+  shouldSeedThemes: boolean;
+}
+
+interface AdminAccountState {
+  hasAdminUsers: boolean;
+  hasRealAdminUsers: boolean;
+  hasBootstrapAdmin: boolean;
+}
 
 const collectionsToResetBeforeSeed = [
   DatabaseCollectionEnum.PROJECTS,
@@ -718,19 +748,25 @@ function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
 }
 
 async function createBootstrapAdminIfNeeded() {
+  const adminState = await getAdminAccountState();
   const db = getDatabase();
-  const existingCount = await db.collection(DatabaseCollectionEnum.ADMIN_USERS).countDocuments();
-  if (existingCount > 0) {
-    console.log('[seed] Admin users already exist, skipping bootstrap user creation.');
-    return;
+
+  if (adminState.hasRealAdminUsers) {
+    console.log('[seed] Real admin users already exist, skipping bootstrap user creation.');
+    return null;
+  }
+
+  if (adminState.hasBootstrapAdmin) {
+    console.log('[seed] Bootstrap admin already exists, skipping bootstrap user creation.');
+    return null;
   }
 
   const now = new Date();
-  const passwordHash = await hashPassword('Admin@1234!');
+  const passwordHash = await hashPassword(BOOTSTRAP_ADMIN_PASSWORD);
 
   const bootstrapUser: AdminUserDocument = {
-    email: 'admin@portfolio.local',
-    username: 'admin',
+    email: BOOTSTRAP_ADMIN_EMAIL,
+    username: BOOTSTRAP_ADMIN_USERNAME,
     displayName: 'Bootstrap Admin',
     passwordHash,
     role: AdminRoleEnum.SUPER_ADMIN,
@@ -742,7 +778,12 @@ async function createBootstrapAdminIfNeeded() {
   };
 
   await db.collection(DatabaseCollectionEnum.ADMIN_USERS).insertOne(bootstrapUser);
-  console.log('[seed] Bootstrap admin user created: admin@portfolio.local / Admin@1234!');
+  console.log(`[seed] Bootstrap admin user created: ${BOOTSTRAP_ADMIN_EMAIL} / ${BOOTSTRAP_ADMIN_PASSWORD}`);
+
+  return {
+    seeded: true,
+    reason: 'bootstrap_admin_created',
+  };
 }
 
 async function runSeedPreset(preset: SeedPreset) {
@@ -844,6 +885,246 @@ export async function seedDemoPersonalContent() {
 
 export async function seedInitialContent() {
   return seedStarterContent();
+}
+
+async function getInitialPlatformFlag() {
+  const db = getDatabase();
+
+  return db.collection<SystemFlagDocument>(DatabaseCollectionEnum.SYSTEM_FLAGS).findOne({
+    key: INITIAL_PLATFORM_SETUP_KEY,
+  });
+}
+
+async function upsertInitialPlatformFlag(
+  patch: Partial<Omit<SystemFlagDocument, '_id' | 'key' | 'createdAt' | 'updatedAt'>>,
+) {
+  const db = getDatabase();
+  const now = new Date();
+  const collection = db.collection<SystemFlagDocument>(DatabaseCollectionEnum.SYSTEM_FLAGS);
+  const existing = await getInitialPlatformFlag();
+
+  if (!existing) {
+    await collection.insertOne({
+      key: INITIAL_PLATFORM_SETUP_KEY,
+      starterSeedCompleted: false,
+      bootstrapAdminCreated: false,
+      realAdminConfigured: false,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+      ...patch,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    await collection.updateOne(
+      { key: INITIAL_PLATFORM_SETUP_KEY },
+      {
+        $set: {
+          ...patch,
+          updatedAt: now,
+        },
+      },
+    );
+  }
+
+  return getInitialPlatformFlag();
+}
+
+async function getAdminAccountState(): Promise<AdminAccountState> {
+  const db = getDatabase();
+
+  const [hasAdminUsers, hasRealAdminUsers, hasBootstrapAdmin] = await Promise.all([
+    db.collection(DatabaseCollectionEnum.ADMIN_USERS).countDocuments({}, { limit: 1 }).then((count) => count > 0),
+    db.collection(DatabaseCollectionEnum.ADMIN_USERS).countDocuments({
+      active: true,
+      $or: [
+        { mustChangePassword: { $exists: false } },
+        { mustChangePassword: false },
+      ],
+    }, { limit: 1 }).then((count) => count > 0),
+    db.collection(DatabaseCollectionEnum.ADMIN_USERS).countDocuments({
+      email: BOOTSTRAP_ADMIN_EMAIL,
+      mustChangePassword: true,
+    }, { limit: 1 }).then((count) => count > 0),
+  ]);
+
+  return {
+    hasAdminUsers,
+    hasRealAdminUsers,
+    hasBootstrapAdmin,
+  };
+}
+
+async function deleteBootstrapAdminIfPresent() {
+  const db = getDatabase();
+  const result = await db.collection(DatabaseCollectionEnum.ADMIN_USERS).deleteMany({
+    email: BOOTSTRAP_ADMIN_EMAIL,
+    mustChangePassword: true,
+  });
+
+  if (result.deletedCount > 0) {
+    console.log('[seed] Removed bootstrap admin because a real admin account is already configured.');
+  }
+}
+
+export async function getInitialSeedStatus(): Promise<InitialSeedStatus> {
+  const db = getDatabase();
+  const [flags, adminState] = await Promise.all([
+    getInitialPlatformFlag(),
+    getAdminAccountState(),
+  ]);
+
+  const [
+    themesCount,
+    projectsCount,
+    profileCount,
+    techSkillsCount,
+    experienceCount,
+    testimonialsCount,
+    socialLinksCount,
+    resumesCount,
+  ] = await Promise.all([
+    db.collection(DatabaseCollectionEnum.THEMES).countDocuments(),
+    db.collection(DatabaseCollectionEnum.PROJECTS).countDocuments(),
+    db.collection(DatabaseCollectionEnum.PROFILE).countDocuments(),
+    db.collection(ContentCollectionEnum.TECH_SKILLS).countDocuments(),
+    db.collection(ContentCollectionEnum.EXPERIENCE).countDocuments(),
+    db.collection(ContentCollectionEnum.TESTIMONIALS).countDocuments(),
+    db.collection(ContentCollectionEnum.SOCIAL_LINKS).countDocuments(),
+    db.collection(ContentCollectionEnum.RESUMES).countDocuments(),
+  ]);
+
+  const flagsPresent = Boolean(flags);
+  const hasAdminUsers = adminState.hasAdminUsers;
+  const hasRealAdminUsers = adminState.hasRealAdminUsers;
+  const hasBootstrapAdmin = adminState.hasBootstrapAdmin;
+  const hasThemes = themesCount > 0;
+  const hasProjects = projectsCount > 0;
+  const hasProfile = profileCount > 0;
+  const hasTechSkills = techSkillsCount > 0;
+  const hasExperience = experienceCount > 0;
+  const hasTestimonials = testimonialsCount > 0;
+  const hasSocialLinks = socialLinksCount > 0;
+  const hasResumes = resumesCount > 0;
+  const hasStarterContent =
+    hasProjects
+    && hasProfile
+    && hasTechSkills
+    && hasExperience
+    && hasTestimonials
+    && hasSocialLinks
+    && hasResumes;
+  const starterSeedCompleted = flags?.starterSeedCompleted === true || hasStarterContent;
+  const realAdminConfigured = flags?.realAdminConfigured === true || hasRealAdminUsers;
+  const isFullyConfigured = starterSeedCompleted && hasThemes && realAdminConfigured;
+  const shouldRunStarterSeed = !starterSeedCompleted && !hasStarterContent;
+  const shouldCreateBootstrapAdmin = !realAdminConfigured && !hasBootstrapAdmin;
+  const shouldSeedThemes = !hasThemes;
+
+  return {
+    flagsPresent,
+    hasAdminUsers,
+    hasRealAdminUsers,
+    hasBootstrapAdmin,
+    hasThemes,
+    hasProjects,
+    hasProfile,
+    hasTechSkills,
+    hasExperience,
+    hasTestimonials,
+    hasSocialLinks,
+    hasResumes,
+    hasStarterContent,
+    isFullyConfigured,
+    shouldRunStarterSeed,
+    shouldCreateBootstrapAdmin,
+    shouldSeedThemes,
+  };
+}
+
+export async function ensureInitialPlatformSetup(preset: SeedPreset = 'starter') {
+  let statusBefore = await getInitialSeedStatus();
+
+  if (preset !== 'starter') {
+    const result = await seedDemoPersonalContent();
+    return {
+      ensured: true,
+      action: 'seed_demo_personal',
+      statusBefore,
+      statusAfter: await getInitialSeedStatus(),
+      seed: result,
+      themes: await seedDefaultThemes(),
+    };
+  }
+
+  let seedResult: Awaited<ReturnType<typeof seedStarterContent>> | null = null;
+  let bootstrapResult: { seeded: boolean; reason: string } | null = null;
+  let themesResult: Awaited<ReturnType<typeof seedDefaultThemes>> | null = null;
+
+  if (statusBefore.hasStarterContent) {
+    await upsertInitialPlatformFlag({ starterSeedCompleted: true });
+  }
+
+  if (statusBefore.hasRealAdminUsers) {
+    await deleteBootstrapAdminIfPresent();
+    await upsertInitialPlatformFlag({
+      realAdminConfigured: true,
+      bootstrapAdminCreated: false,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+    });
+  } else if (statusBefore.hasBootstrapAdmin) {
+    await upsertInitialPlatformFlag({
+      realAdminConfigured: false,
+      bootstrapAdminCreated: true,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+    });
+  }
+
+  statusBefore = await getInitialSeedStatus();
+
+  if (statusBefore.shouldRunStarterSeed) {
+    seedResult = await seedStarterContent();
+    await upsertInitialPlatformFlag({
+      starterSeedCompleted: true,
+      bootstrapAdminCreated: true,
+      realAdminConfigured: false,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+    });
+  } else if (statusBefore.shouldCreateBootstrapAdmin) {
+    bootstrapResult = await createBootstrapAdminIfNeeded();
+    if (bootstrapResult?.seeded) {
+      await upsertInitialPlatformFlag({
+        bootstrapAdminCreated: true,
+        realAdminConfigured: false,
+        bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+      });
+    }
+  }
+
+  if (statusBefore.shouldSeedThemes) {
+    themesResult = await seedDefaultThemes();
+  }
+
+  if (statusBefore.hasThemes || themesResult?.seeded) {
+    await upsertInitialPlatformFlag({});
+  }
+
+  const statusAfter = await getInitialSeedStatus();
+
+  return {
+    ensured: Boolean(seedResult || bootstrapResult || (themesResult?.seeded ?? false)),
+    action: seedResult
+      ? 'starter_seed_executed'
+      : bootstrapResult
+        ? 'bootstrap_admin_created'
+        : themesResult?.seeded
+          ? 'themes_seeded'
+          : 'already_configured',
+    statusBefore,
+    statusAfter,
+    seed: seedResult,
+    bootstrapAdmin: bootstrapResult,
+    themes: themesResult,
+  };
 }
 
 export async function seedDefaultThemes(force = false) {

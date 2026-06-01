@@ -5,4 +5,5 @@ export enum DatabaseCollectionEnum {
   ADMIN_USERS = 'admin_users',
   THEMES = 'themes',
   PASSWORD_RESET_TOKENS = 'password_reset_tokens',
+  SYSTEM_FLAGS = 'system_flags',
 }

@@ -20,6 +20,7 @@ import { parseEnumValue } from '../../utils/enum.js';
 import { createHttpError } from '../../utils/http-error.js';
 import { signAdminToken } from '../../utils/jwt.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
+import { BOOTSTRAP_ADMIN_EMAIL } from './seed.service.js';
 
 const adminUsersRepository = new AdminUsersRepository();
 
@@ -251,6 +252,23 @@ export async function setupAdminAccount(currentUserId: string, payload: SetupAcc
 
   // Delete the bootstrap user
   await db.collection(DatabaseCollectionEnum.ADMIN_USERS).deleteOne({ _id: new ObjectId(currentUserId) });
+  await db.collection(DatabaseCollectionEnum.SYSTEM_FLAGS).updateOne(
+    { key: 'initial_platform_setup' },
+    {
+      $set: {
+        starterSeedCompleted: true,
+        realAdminConfigured: true,
+        bootstrapAdminCreated: false,
+        bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+        updatedAt: now,
+      },
+      $setOnInsert: {
+        key: 'initial_platform_setup',
+        createdAt: now,
+      },
+    },
+    { upsert: true },
+  );
 
   const accessToken = signAdminToken({
     sub: String(insertedId),

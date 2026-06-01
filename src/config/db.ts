@@ -23,6 +23,7 @@ export async function connectToDatabase() {
   await Promise.all([
     database.collection(DatabaseCollectionEnum.PROJECTS).createIndex({ slug: 1 }, { unique: true }),
     database.collection(DatabaseCollectionEnum.PROFILE).createIndex({ key: 1 }, { unique: true }),
+    database.collection(DatabaseCollectionEnum.SYSTEM_FLAGS).createIndex({ key: 1 }, { unique: true }),
     database.collection(ContentCollectionEnum.TECH_SKILLS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection(ContentCollectionEnum.EXPERIENCE).createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection(ContentCollectionEnum.SOCIAL_LINKS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
