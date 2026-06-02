@@ -7,6 +7,7 @@ import type {
 import type { ImageUploadContract, StoredImageAsset } from '../../../core/interfaces/image.js';
 import type { JsonObject, JsonValue } from '../../../core/interfaces/json.js';
 import { isJsonObject } from '../../../core/interfaces/json.js';
+import { env } from '../../../config/env.js';
 import { createHttpError } from '../../../utils/http-error.js';
 import type { FileBaseService } from './fileBase.service.js';
 
@@ -51,6 +52,11 @@ export class FileAssetsService {
 
     if (typeof asset === 'string') {
       if (this.isDirectUrl(asset)) {
+        const managedFileName = this.extractManagedFileNameFromUrl(asset);
+        if (managedFileName) {
+          return this.resolveImageAsset(managedFileName);
+        }
+
         return asset;
       }
 
@@ -68,6 +74,11 @@ export class FileAssetsService {
     }
 
     if (asset.url && !asset.fileName) {
+      const managedFileName = this.extractManagedFileNameFromUrl(asset.url);
+      if (managedFileName) {
+        return this.resolveImageAsset(managedFileName);
+      }
+
       return asset.url;
     }
 
@@ -106,6 +117,30 @@ export class FileAssetsService {
 
   private isDirectUrl(value: string) {
     return /^(?:https?:)?\/\//u.test(value) || value.startsWith('/') || value.startsWith('data:');
+  }
+
+  private extractManagedFileNameFromUrl(value: string): string | null {
+    if (!/^https?:\/\//iu.test(value) || !env.s3Bucket) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(value);
+      const segments = parsed.pathname
+        .split('/')
+        .map((segment) => decodeURIComponent(segment.trim()))
+        .filter(Boolean);
+      const bucketIndex = segments.findIndex((segment) => segment === env.s3Bucket);
+
+      if (bucketIndex === -1) {
+        return null;
+      }
+
+      const filePath = segments.slice(bucketIndex + 1).join('/');
+      return filePath || null;
+    } catch {
+      return null;
+    }
   }
 
   private async storeAssetLikeValue(
