@@ -195,6 +195,11 @@ export class FileAssetsService {
 
     const result: JsonObject = {};
     for (const [key, item] of Object.entries(value)) {
+      if (this.isBooleanMetadataKey(key)) {
+        result[key] = typeof item === 'boolean' ? item : Boolean(item);
+        continue;
+      }
+
       if (this.isImageCollectionMetadataKey(key)) {
         result[key] = await this.normalizeImageCollection(
           item as Array<string | ImageUploadContract | StoredImageAsset | JsonObject | null>,
@@ -250,6 +255,11 @@ export class FileAssetsService {
 
     const result: ResolvedMetadataObject = {};
     for (const [key, item] of Object.entries(value)) {
+      if (this.isBooleanMetadataKey(key)) {
+        result[key] = typeof item === 'boolean' ? item : Boolean(item);
+        continue;
+      }
+
       if (this.isImageCollectionMetadataKey(key)) {
         if (Array.isArray(item)) {
           result[key] = (await Promise.all(item.map((entry) => this.resolveImageAsset(entry as string | StoredImageAsset | null))))
@@ -381,6 +391,10 @@ export class FileAssetsService {
 
   private isImageCollectionMetadataKey(key: string) {
     return /(images|icons|logos|backgrounds)$/iu.test(key);
+  }
+
+  private isBooleanMetadataKey(key: string) {
+    return /TransparentBackground$/u.test(key);
   }
 
   private toStoredImageAsset(candidate: JsonObject): StoredImageAsset {
