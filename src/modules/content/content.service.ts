@@ -20,6 +20,7 @@ import { ContentRepository, ProfileRepository } from './content.repository.js';
 
 const RESUME_FILE_METADATA_KEY = 'resumeFile';
 const RESUME_BUCKET_FOLDER = 'resumes';
+const RESUME_STORAGE_OPERATION_TIMEOUT_MS = 3500;
 
 const collectionMap = {
   [ContentResourceEnum.TECH_SKILLS]: new ContentRepository(ContentCollectionEnum.TECH_SKILLS),
@@ -187,6 +188,22 @@ async function deleteStoredResumeFile(fileName: string | null) {
   }
 }
 
+async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 async function uploadResumeBase64ToStorage(base64: string, fileName: string, mimeType: string) {
   const parsedBinary = parseUploadedBinary(base64);
   const effectiveMimeType = parsedBinary.mimeType || mimeType || 'application/octet-stream';
@@ -202,6 +219,32 @@ async function uploadResumeBase64ToStorage(base64: string, fileName: string, mim
     buffer: Buffer.from(parsedBinary.base64, 'base64'),
     size: Buffer.byteLength(parsedBinary.base64, 'base64'),
   });
+}
+
+async function safelyMigrateLegacyResumeBase64(item: ContentDocument) {
+  try {
+    return await withTimeout(
+      migrateLegacyResumeBase64(item),
+      RESUME_STORAGE_OPERATION_TIMEOUT_MS,
+      `[content] Resume legacy migration timed out for "${item.slug || item._id}".`,
+    );
+  } catch (error) {
+    console.warn(`[content] Resume legacy migration skipped for "${item.slug || item._id}".`, error);
+    return item;
+  }
+}
+
+async function safelyGetResumeDownloadUrl(fileName: string, originalFileName?: string) {
+  try {
+    return await withTimeout(
+      fileService.getDownloadUrl(fileName, originalFileName),
+      RESUME_STORAGE_OPERATION_TIMEOUT_MS,
+      `[content] Resume signed URL timed out for "${fileName}".`,
+    );
+  } catch (error) {
+    console.warn(`[content] Resume signed URL unavailable for "${fileName}".`, error);
+    return null;
+  }
 }
 
 async function migrateLegacyResumeBase64(item: ContentDocument) {
@@ -257,11 +300,11 @@ async function resolveContentItem(resourceName: ContentResourceName, item: Conte
   }
 
   if (resourceName === ContentResourceEnum.RESUMES) {
-    const resolvedItem = await migrateLegacyResumeBase64(item);
+    const resolvedItem = await safelyMigrateLegacyResumeBase64(item);
     const storedResumeFileName = getResumeStoredFileName(resolvedItem.metadata);
     const originalFileName = getMetadataString(resolvedItem.metadata, 'originalName') || resolvedItem.fileName || undefined;
     const downloadUrl = storedResumeFileName
-      ? await fileService.getDownloadUrl(storedResumeFileName, originalFileName)
+      ? await safelyGetResumeDownloadUrl(storedResumeFileName, originalFileName)
       : null;
 
     return {
