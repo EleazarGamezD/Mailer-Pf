@@ -323,8 +323,17 @@ function enrichOperation(routePath: string, method: string, operation: SwaggerOp
 }
 
 function normalizeServerUrl(rawUrl: string) {
-  const parsedUrl = new URL(rawUrl);
-  return `${parsedUrl.protocol}//${parsedUrl.host}`;
+  const trimmedUrl = rawUrl.trim();
+  const candidateUrl = /^https?:\/\//iu.test(trimmedUrl)
+    ? trimmedUrl
+    : `https://${trimmedUrl.replace(/^\/+/u, '')}`;
+
+  try {
+    const parsedUrl = new URL(candidateUrl);
+    return `${parsedUrl.protocol}//${parsedUrl.host}`;
+  } catch {
+    return 'https://localhost';
+  }
 }
 
 function prefixRoutePath(prefix: string, routePath: string) {
