@@ -19,10 +19,13 @@ import { fileService } from '../files/index.js';
 import { ContentRepository, ProfileRepository } from './content.repository.js';
 
 const RESUME_FILE_METADATA_KEY = 'resumeFile';
+const RESUME_BUCKET_FOLDER = 'resumes';
 
 const collectionMap = {
   [ContentResourceEnum.TECH_SKILLS]: new ContentRepository(ContentCollectionEnum.TECH_SKILLS),
   [ContentResourceEnum.EXPERIENCE]: new ContentRepository(ContentCollectionEnum.EXPERIENCE),
+  [ContentResourceEnum.EDUCATION]: new ContentRepository(ContentCollectionEnum.EDUCATION),
+  [ContentResourceEnum.CERTIFICATIONS]: new ContentRepository(ContentCollectionEnum.CERTIFICATIONS),
   [ContentResourceEnum.SOCIAL_LINKS]: new ContentRepository(ContentCollectionEnum.SOCIAL_LINKS),
   [ContentResourceEnum.RESUMES]: new ContentRepository(ContentCollectionEnum.RESUMES),
   [ContentResourceEnum.TESTIMONIALS]: new ContentRepository(ContentCollectionEnum.TESTIMONIALS),
@@ -184,12 +187,57 @@ async function deleteStoredResumeFile(fileName: string | null) {
   }
 }
 
+async function uploadResumeBase64ToStorage(base64: string, fileName: string, mimeType: string) {
+  const parsedBinary = parseUploadedBinary(base64);
+  const effectiveMimeType = parsedBinary.mimeType || mimeType || 'application/octet-stream';
+  const extension = getResumeFileExtension(fileName, effectiveMimeType);
+
+  return fileService.uploadFile({
+    name: fileName || `resume.${extension}`,
+    originalName: fileName || `resume.${extension}`,
+    folder: RESUME_BUCKET_FOLDER,
+    extension,
+    mimeType: effectiveMimeType,
+    base64: parsedBinary.base64,
+    buffer: Buffer.from(parsedBinary.base64, 'base64'),
+    size: Buffer.byteLength(parsedBinary.base64, 'base64'),
+  });
+}
+
+async function migrateLegacyResumeBase64(item: ContentDocument) {
+  const legacyResumeBase64 = typeof item.base64 === 'string' ? item.base64.trim() : '';
+  if (!legacyResumeBase64 || getResumeStoredFileName(item.metadata)) {
+    return item;
+  }
+
+  const storedResumeFile = await uploadResumeBase64ToStorage(legacyResumeBase64, item.fileName, item.mimeType);
+  const updated = await getRepository(ContentResourceEnum.RESUMES).updateById(item._id!, {
+    metadata: {
+      ...item.metadata,
+      originalName: getMetadataString(item.metadata, 'originalName') || item.fileName,
+      [RESUME_FILE_METADATA_KEY]: storedResumeFile,
+    },
+    base64: '',
+    updatedAt: new Date(),
+  });
+
+  return updated ?? {
+    ...item,
+    metadata: {
+      ...item.metadata,
+      originalName: getMetadataString(item.metadata, 'originalName') || item.fileName,
+      [RESUME_FILE_METADATA_KEY]: storedResumeFile,
+    },
+    base64: '',
+  };
+}
+
 async function resolveContentItem(resourceName: ContentResourceName, item: ContentDocument | null) {
   if (!item) {
     return null;
   }
 
-  if (resourceName === ContentResourceEnum.EXPERIENCE) {
+  if (resourceName === ContentResourceEnum.EXPERIENCE || resourceName === ContentResourceEnum.EDUCATION) {
     const period = normalizeExperiencePeriod(item.period, item.period, item.value ?? item.metadata?.year);
 
     return {
@@ -209,16 +257,18 @@ async function resolveContentItem(resourceName: ContentResourceName, item: Conte
   }
 
   if (resourceName === ContentResourceEnum.RESUMES) {
-    const storedResumeFileName = getResumeStoredFileName(item.metadata);
-    const originalFileName = getMetadataString(item.metadata, 'originalName') || undefined;
+    const resolvedItem = await migrateLegacyResumeBase64(item);
+    const storedResumeFileName = getResumeStoredFileName(resolvedItem.metadata);
+    const originalFileName = getMetadataString(resolvedItem.metadata, 'originalName') || resolvedItem.fileName || undefined;
     const downloadUrl = storedResumeFileName
       ? await fileService.getDownloadUrl(storedResumeFileName, originalFileName)
       : null;
 
     return {
-      ...item,
-      language: getMetadataString(item.metadata, 'language'),
-      href: downloadUrl ?? item.href,
+      ...resolvedItem,
+      language: getMetadataString(resolvedItem.metadata, 'language'),
+      href: downloadUrl ?? resolvedItem.href,
+      base64: '',
     };
   }
 
@@ -354,29 +404,20 @@ async function normalizeLocalizedContent(
         : getMetadataString(normalizedMetadata, 'language') || getMetadataString(defaults.metadata, 'language');
     const previousStoredResumeFile = getResumeStoredFileName(defaults.metadata);
     const rawResumeBase64 = typeof payload.base64 === 'string' ? payload.base64.trim() : '';
+    const legacyResumeBase64 = !previousStoredResumeFile && typeof defaults.base64 === 'string'
+      ? defaults.base64.trim()
+      : '';
     let storedResumeFile = previousStoredResumeFile;
-    let persistedBase64 = rawResumeBase64 || defaults.base64 || '';
+    let persistedBase64 = '';
 
-    if (rawResumeBase64) {
-      const parsedBinary = parseUploadedBinary(rawResumeBase64);
-      const effectiveMimeType = parsedBinary.mimeType || mimeType || 'application/octet-stream';
-      const extension = getResumeFileExtension(rawFileName, effectiveMimeType);
-      const uploadedFileName = await fileService.uploadFile({
-        name: rawFileName || `resume.${extension}`,
-        originalName: rawFileName || `resume.${extension}`,
-        extension,
-        mimeType: effectiveMimeType,
-        base64: parsedBinary.base64,
-        buffer: Buffer.from(parsedBinary.base64, 'base64'),
-        size: Buffer.byteLength(parsedBinary.base64, 'base64'),
-      });
+    if (rawResumeBase64 || legacyResumeBase64) {
+      const uploadedFileName = await uploadResumeBase64ToStorage(rawResumeBase64 || legacyResumeBase64, rawFileName, mimeType);
 
       if (previousStoredResumeFile && previousStoredResumeFile !== uploadedFileName) {
         await deleteStoredResumeFile(previousStoredResumeFile);
       }
 
       storedResumeFile = uploadedFileName;
-      persistedBase64 = '';
     }
 
     return {
@@ -416,7 +457,7 @@ async function normalizeLocalizedContent(
     label,
     value: payload.value ?? defaults.value ?? null,
     period:
-      resourceName === ContentResourceEnum.EXPERIENCE
+      resourceName === ContentResourceEnum.EXPERIENCE || resourceName === ContentResourceEnum.EDUCATION
         ? normalizeExperiencePeriod(payload.period, defaults.period, payload.value ?? defaults.value ?? defaults.metadata?.year)
         : defaults.period,
     icon: payload.icon ?? defaults.icon ?? null,
@@ -496,7 +537,7 @@ export async function createContentItem(resourceName: ContentResourceName, paylo
   const document = {
     ...normalizedDocument,
     value:
-      resourceName === ContentResourceEnum.EXPERIENCE
+      resourceName === ContentResourceEnum.EXPERIENCE || resourceName === ContentResourceEnum.EDUCATION
         ? formatExperiencePeriod(normalizedDocument.period ?? null)
         : normalizedDocument.value,
     createdAt: new Date(),
@@ -524,7 +565,7 @@ export async function updateContentItem(
   const updated = await repository.updateById(objectId, {
     ...normalizedDocument,
     value:
-      resourceName === ContentResourceEnum.EXPERIENCE
+      resourceName === ContentResourceEnum.EXPERIENCE || resourceName === ContentResourceEnum.EDUCATION
         ? formatExperiencePeriod(normalizedDocument.period ?? null)
         : normalizedDocument.value,
     updatedAt: new Date(),

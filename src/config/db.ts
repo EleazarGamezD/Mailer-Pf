@@ -26,6 +26,8 @@ export async function connectToDatabase() {
     database.collection(DatabaseCollectionEnum.SYSTEM_FLAGS).createIndex({ key: 1 }, { unique: true }),
     database.collection(ContentCollectionEnum.TECH_SKILLS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection(ContentCollectionEnum.EXPERIENCE).createIndex({ slug: 1 }, { unique: true, sparse: true }),
+    database.collection(ContentCollectionEnum.EDUCATION).createIndex({ slug: 1 }, { unique: true, sparse: true }),
+    database.collection(ContentCollectionEnum.CERTIFICATIONS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection(ContentCollectionEnum.SOCIAL_LINKS).createIndex({ slug: 1 }, { unique: true, sparse: true }),
     database.collection(ContentCollectionEnum.RESUMES).createIndex({ active: 1 }),
     database.collection(DatabaseCollectionEnum.ANALYTICS_EVENTS).createIndex({ createdAt: -1 }),

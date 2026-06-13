@@ -16,6 +16,8 @@ import { fileService } from '../files/index.js';
 //   - tsx dev  → src/modules/admin/seed.service.ts  → ../../assets/seed-media/ = src/assets/seed-media/
 //   - node dist → dist/modules/admin/seed.service.js → ../../assets/seed-media/ = dist/assets/seed-media/
 const backendSeedAssetRoot = new URL('../../assets/seed-media/', import.meta.url);
+const RESUME_BUCKET_FOLDER = 'resumes';
+const RESUME_FILE_METADATA_KEY = 'resumeFile';
 
 const mimeTypeByExtension: Record<string, string> = {
   svg: 'image/svg+xml',
@@ -118,6 +120,22 @@ startxref
   return Buffer.from(pdf, 'utf-8').toString('base64');
 }
 
+async function uploadSeedResume(title: string, fileName: string) {
+  const base64 = createResumePdfBase64(title);
+  const buffer = Buffer.from(base64, 'base64');
+
+  return fileService.uploadFile({
+    buffer,
+    base64,
+    folder: RESUME_BUCKET_FOLDER,
+    extension: 'pdf',
+    mimeType: 'application/pdf',
+    originalName: fileName,
+    name: fileName,
+    size: buffer.length,
+  });
+}
+
 type SeedPreset = 'starter' | 'demo-personal';
 const INITIAL_PLATFORM_SETUP_KEY = 'initial_platform_setup';
 export const BOOTSTRAP_ADMIN_EMAIL = 'admin@portfolio.local';
@@ -134,6 +152,8 @@ export interface InitialSeedStatus {
   hasProfile: boolean;
   hasTechSkills: boolean;
   hasExperience: boolean;
+  hasEducation: boolean;
+  hasCertifications: boolean;
   hasTestimonials: boolean;
   hasSocialLinks: boolean;
   hasResumes: boolean;
@@ -156,6 +176,8 @@ const collectionsToResetBeforeSafeSeed = [
   DatabaseCollectionEnum.ANALYTICS_EVENTS,
   ContentCollectionEnum.TECH_SKILLS,
   ContentCollectionEnum.EXPERIENCE,
+  ContentCollectionEnum.EDUCATION,
+  ContentCollectionEnum.CERTIFICATIONS,
   ContentCollectionEnum.TESTIMONIALS,
   ContentCollectionEnum.SOCIAL_LINKS,
   ContentCollectionEnum.RESUMES,
@@ -208,6 +230,8 @@ interface SeedBundle {
   projects: (Record<string, unknown> & { skillSlugs?: string[]; primarySkillSlug?: string | null })[];
   techSkills: (Record<string, unknown> & { slug: string })[];
   experience: (Record<string, unknown> & { skillSlugs?: string[] })[];
+  education: Record<string, unknown>[];
+  certifications: Record<string, unknown>[];
   testimonials: Record<string, unknown>[];
   socialLinks: Record<string, unknown>[];
   resumes: Record<string, unknown>[];
@@ -412,28 +436,36 @@ function buildSocialLinks(items: Array<[string, string, string, string]>) {
   }));
 }
 
-function buildResumes(items: Array<[string, string, string, string, string]>) {
-  return items.map(([slug, labelEs, labelEn, fileName, language], index) => ({
-    slug,
-    label: { es: labelEs, en: labelEn },
-    title: { es: labelEs, en: labelEn },
-    description: {
-      es: 'Documento base para hoja de vida descargable',
-      en: 'Starter document for downloadable resume',
-    },
-    value: fileName,
-    icon: null,
-    href: '',
-    order: index + 1,
-    active: true,
-    metadata: { language },
-    fileName,
-    mimeType: 'application/pdf',
-    base64: createResumePdfBase64(language === 'es' ? labelEs : labelEn),
+async function buildResumes(items: Array<[string, string, string, string, string]>) {
+  return Promise.all(items.map(async ([slug, labelEs, labelEn, fileName, language], index) => {
+    const storedFileName = await uploadSeedResume(language === 'es' ? labelEs : labelEn, fileName);
+
+    return {
+      slug,
+      label: { es: labelEs, en: labelEn },
+      title: { es: labelEs, en: labelEn },
+      description: {
+        es: 'Documento base para hoja de vida descargable',
+        en: 'Starter document for downloadable resume',
+      },
+      value: fileName,
+      icon: null,
+      href: '',
+      order: index + 1,
+      active: true,
+      metadata: {
+        language,
+        originalName: fileName,
+        [RESUME_FILE_METADATA_KEY]: storedFileName,
+      },
+      fileName,
+      mimeType: 'application/pdf',
+      base64: '',
+    };
   }));
 }
 
-function buildStarterSeedBundle(assets: SeedAssets): SeedBundle {
+async function buildStarterSeedBundle(assets: SeedAssets): Promise<SeedBundle> {
   const projects = [
     {
       slug: 'starter-platform',
@@ -513,6 +545,8 @@ function buildStarterSeedBundle(assets: SeedAssets): SeedBundle {
       ['solid-ops', '2018 - 2023', 'Solid Ops', 'Experiencia senior orientada a coordinacion tecnica y continuidad operativa.', 'Senior experience focused on technical coordination and operational continuity.', ['node-express', 'docker', 'postman']],
       ['legacy-systems', '2013 - 2018', 'Legacy Systems', 'Experiencia historica para poblar la trayectoria profesional inicial.', 'Historic experience to populate the initial professional timeline.', ['typescript', 'bootstrap']],
     ]),
+    education: [],
+    certifications: [],
     testimonials: buildTestimonials([
       ['client-one', 'Client One', 'Product Lead', 'Acme Corp', 'Este espacio muestra un testimonio de ejemplo listo para ser reemplazado con contenido real.', 'This area displays a starter testimonial ready to be replaced with real content.'],
       ['client-two', 'Client Two', 'Engineering Manager', 'North Hub', 'La estructura soporta testimonios bilingues y estados activos controlados desde el panel.', 'The structure supports bilingual testimonials and active states managed from the dashboard.'],
@@ -523,7 +557,7 @@ function buildStarterSeedBundle(assets: SeedAssets): SeedBundle {
       ['linkedin', 'LinkedIn', 'https://www.linkedin.com/', 'fa-brands fa-linkedin'],
       ['x', 'X', 'https://x.com/', 'fa-brands fa-x-twitter'],
     ]),
-    resumes: buildResumes([
+    resumes: await buildResumes([
       ['portfolio-owner-cv-es', 'Portfolio Owner - CV Español', 'Portfolio Owner - CV English', 'portfolio-owner-cv-es.pdf', 'es'],
       ['portfolio-owner-cv-en', 'Portfolio Owner - CV Español', 'Portfolio Owner - CV English', 'portfolio-owner-cv-en.pdf', 'en'],
     ]),
@@ -605,7 +639,7 @@ function buildStarterSeedBundle(assets: SeedAssets): SeedBundle {
   };
 }
 
-function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
+async function buildDemoPersonalSeedBundle(assets: SeedAssets): Promise<SeedBundle> {
   const projects = [
     {
       slug: 'portfolio-cms-dinamico',
@@ -685,6 +719,8 @@ function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
       ['postouch-colombia', '2018 - 2023', 'PosTouch Colombia S.A.S', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Head of technical department, supporting fiscal and accounting systems.', ['node-express', 'postman', 'docker']],
       ['retail-pos-systems', '2013 - 2018', 'Retail Pos Systems Tec. C.A.', 'Jefe de departamento tecnico, soporte a sistemas fiscales y contables.', 'Head of technical department, supporting fiscal and accounting systems.', ['typescript', 'bootstrap']],
     ]),
+    education: [],
+    certifications: [],
     testimonials: buildTestimonials([
       ['arian-valdivieso', 'Arian Valdivieso', 'COO', 'Meraki Office', 'Eleazar demostro ser un miembro excepcional del equipo, destacandose por su naturaleza proactiva y sus notables habilidades de adaptacion. Su compromiso con los proyectos y entusiasmo por aprender contribuyo significativamente a nuestro exito en Meraki.', 'Eleazar proved to be an exceptional team member, standing out for his proactive nature and remarkable adaptability. His commitment to projects and eagerness to learn contributed significantly to our success at Meraki.'],
       ['wilhelm-flores', 'Wilhelm Flores', 'Full Stack Developer', 'Meraki Office', 'Eleazar es un excelente solucionador de problemas. Su capacidad para pensar fuera de lo convencional y proponer soluciones escalables fue clave para el exito de nuestros proyectos.', 'Eleazar is an excellent problem solver. His ability to think beyond the conventional and propose scalable solutions was key to the success of our projects.'],
@@ -695,7 +731,7 @@ function buildDemoPersonalSeedBundle(assets: SeedAssets): SeedBundle {
       ['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/eleazargamez/', 'fa-brands fa-linkedin'],
       ['x', 'X', 'https://x.com/Eleazar_Gamez', 'fa-brands fa-x-twitter'],
     ]),
-    resumes: buildResumes([
+    resumes: await buildResumes([
       ['eleazar-gamez-cv-es', 'Eleazar Gamez - CV Español', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-es.pdf', 'es'],
       ['eleazar-gamez-cv-en', 'Eleazar Gamez - CV Español', 'Eleazar Gamez - CV English', 'eleazar-gamez-cv-en.pdf', 'en'],
     ]),
@@ -847,9 +883,9 @@ async function runSeedPreset(
   }
 
   const assets = await loadSeedAssets();
-  const bundle = preset === 'demo-personal'
+  const bundle = await (preset === 'demo-personal'
     ? buildDemoPersonalSeedBundle(assets)
-    : buildStarterSeedBundle(assets);
+    : buildStarterSeedBundle(assets));
 
   // Insert skills first so we can resolve slug→id for projects and experience
   console.log(`[seed] Inserting ${bundle.techSkills.length} tech skills...`);
@@ -886,6 +922,16 @@ async function runSeedPreset(
       updatedAt: now,
     })),
   );
+
+  if (bundle.education.length > 0) {
+    console.log(`[seed] Inserting ${bundle.education.length} education items...`);
+    await db.collection(ContentCollectionEnum.EDUCATION).insertMany(bundle.education.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  }
+
+  if (bundle.certifications.length > 0) {
+    console.log(`[seed] Inserting ${bundle.certifications.length} certifications...`);
+    await db.collection(ContentCollectionEnum.CERTIFICATIONS).insertMany(bundle.certifications.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
+  }
 
   console.log(`[seed] Inserting ${bundle.testimonials.length} testimonials...`);
   await db.collection(ContentCollectionEnum.TESTIMONIALS).insertMany(bundle.testimonials.map((item) => ({ ...item, createdAt: now, updatedAt: now })));
@@ -926,6 +972,8 @@ async function runSeedPreset(
       DatabaseCollectionEnum.PROJECTS,
       ContentCollectionEnum.TECH_SKILLS,
       ContentCollectionEnum.EXPERIENCE,
+      ContentCollectionEnum.EDUCATION,
+      ContentCollectionEnum.CERTIFICATIONS,
       ContentCollectionEnum.TESTIMONIALS,
       ContentCollectionEnum.SOCIAL_LINKS,
       ContentCollectionEnum.RESUMES,
@@ -1043,6 +1091,8 @@ export async function getInitialSeedStatus(): Promise<InitialSeedStatus> {
     profileCount,
     techSkillsCount,
     experienceCount,
+    educationCount,
+    certificationsCount,
     testimonialsCount,
     socialLinksCount,
     resumesCount,
@@ -1052,6 +1102,8 @@ export async function getInitialSeedStatus(): Promise<InitialSeedStatus> {
     db.collection(DatabaseCollectionEnum.PROFILE).countDocuments(),
     db.collection(ContentCollectionEnum.TECH_SKILLS).countDocuments(),
     db.collection(ContentCollectionEnum.EXPERIENCE).countDocuments(),
+    db.collection(ContentCollectionEnum.EDUCATION).countDocuments(),
+    db.collection(ContentCollectionEnum.CERTIFICATIONS).countDocuments(),
     db.collection(ContentCollectionEnum.TESTIMONIALS).countDocuments(),
     db.collection(ContentCollectionEnum.SOCIAL_LINKS).countDocuments(),
     db.collection(ContentCollectionEnum.RESUMES).countDocuments(),
@@ -1066,6 +1118,8 @@ export async function getInitialSeedStatus(): Promise<InitialSeedStatus> {
   const hasProfile = profileCount > 0;
   const hasTechSkills = techSkillsCount > 0;
   const hasExperience = experienceCount > 0;
+  const hasEducation = educationCount > 0;
+  const hasCertifications = certificationsCount > 0;
   const hasTestimonials = testimonialsCount > 0;
   const hasSocialLinks = socialLinksCount > 0;
   const hasResumes = resumesCount > 0;
@@ -1094,6 +1148,8 @@ export async function getInitialSeedStatus(): Promise<InitialSeedStatus> {
     hasProfile,
     hasTechSkills,
     hasExperience,
+    hasEducation,
+    hasCertifications,
     hasTestimonials,
     hasSocialLinks,
     hasResumes,

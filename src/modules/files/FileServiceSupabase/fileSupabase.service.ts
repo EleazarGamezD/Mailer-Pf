@@ -39,7 +39,7 @@ export class FileSupabaseService implements FileProviderContract {
 
   async uploadFile(payload: FileBinaryPayload): Promise<string> {
     const extension = this.normalizeExtension(payload.extension);
-    const fileName = `${randomUUID()}.${extension}`;
+    const fileName = this.buildObjectKey(payload.folder, extension);
 
     await this.client.send(new PutObjectCommand({
       Bucket: this.bucketName,
@@ -112,6 +112,17 @@ export class FileSupabaseService implements FileProviderContract {
 
   private normalizeExtension(extension: string | null | undefined) {
     return extension?.trim().replace(/^\./u, '').toLowerCase() || '';
+  }
+
+  private buildObjectKey(folder: string | null | undefined, extension: string) {
+    const normalizedFolder = folder
+      ?.trim()
+      .replace(/\\/gu, '/')
+      .replace(/^\/+|\/+$/gu, '')
+      .replace(/\/{2,}/gu, '/');
+    const baseName = `${randomUUID()}.${extension || 'bin'}`;
+
+    return normalizedFolder ? `${normalizedFolder}/${baseName}` : baseName;
   }
 
   private async listBucketObjectNames(): Promise<string[]> {

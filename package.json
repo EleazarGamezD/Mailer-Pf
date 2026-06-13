@@ -33,6 +33,7 @@
     "nodemailer-express-handlebars": "^7.0.0",
     "nodemon": "^3.1.14",
     "pdfkit": "^0.18.0",
+    "puppeteer": "^24.15.0",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1"
   },

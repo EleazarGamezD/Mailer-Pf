@@ -42,12 +42,11 @@ contentRouter.get(
   asyncHandler(async (req, res) => {
     // #swagger.tags = ['Content']
     const lang = req.query['lang'] === 'en' ? 'en' : 'es';
-    const pdfBuffer = await generateCvPdf(lang);
-    const fileName = lang === 'en' ? 'resume-en.pdf' : 'cv-es.pdf';
+    const { buffer, fileName } = await generateCvPdf(lang);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-    res.end(pdfBuffer);
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   }),
 );
 

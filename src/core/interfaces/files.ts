@@ -6,6 +6,7 @@ export type FileStorageMode = FileStorageModeEnum;
 export interface FileBinaryPayload {
   id?: string;
   name?: string;
+  folder?: string;
   base64: string;
   buffer: Buffer;
   mimeType: string;

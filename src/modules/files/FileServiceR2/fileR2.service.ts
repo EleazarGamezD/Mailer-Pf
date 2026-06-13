@@ -4,7 +4,7 @@ import { Client } from 'minio';
 import { env } from '../../../config/env.js';
 import { FileStorageModeEnum } from '../../../core/enums/file-storage-mode.enum.js';
 import type { FileBinaryPayload } from '../../../core/interfaces/files.js';
-import type { FileProviderContract } from '../fileServiceBase/file-provider.contract.js';
+import type { FileProviderContract, FileUrlOptions } from '../fileServiceBase/file-provider.contract.js';
 
 export class FileR2Service implements FileProviderContract {
   readonly storageMode = FileStorageModeEnum.R2;
@@ -30,7 +30,7 @@ export class FileR2Service implements FileProviderContract {
 
   async uploadFile(payload: FileBinaryPayload): Promise<string> {
     const extension = this.normalizeExtension(payload.extension);
-    const fileName = `${randomUUID()}.${extension}`;
+    const fileName = this.buildObjectKey(payload.folder, extension);
 
     await this.client.putObject(this.bucketName, fileName, payload.buffer, payload.size, {
       'Content-Type': payload.mimeType,
@@ -39,12 +39,18 @@ export class FileR2Service implements FileProviderContract {
     return fileName;
   }
 
-  async getFileUrl(fileName: string) {
+  async getFileUrl(fileName: string, options?: FileUrlOptions) {
     try {
       await this.client.statObject(this.bucketName, fileName);
-      return await this.client.presignedGetObject(this.bucketName, fileName, 60 * 60 * 24 * 7, {
+      const requestParams: Record<string, string> = {
         'response-cache-control': 'max-age=3600',
-      });
+      };
+
+      if (options?.forceDownload) {
+        requestParams['response-content-disposition'] = `attachment; filename="${options.downloadName ?? fileName}"`;
+      }
+
+      return await this.client.presignedGetObject(this.bucketName, fileName, 60 * 60 * 24 * 7, requestParams);
     } catch (error) {
       const minioError = this.toMinioError(error as Error | { code?: string } | null);
       if (this.isMissingObjectError(minioError)) {
@@ -81,6 +87,17 @@ export class FileR2Service implements FileProviderContract {
 
   private normalizeExtension(extension: string | null | undefined) {
     return extension?.trim().replace(/^\./u, '').toLowerCase() || '';
+  }
+
+  private buildObjectKey(folder: string | null | undefined, extension: string) {
+    const normalizedFolder = folder
+      ?.trim()
+      .replace(/\\/gu, '/')
+      .replace(/^\/+|\/+$/gu, '')
+      .replace(/\/{2,}/gu, '/');
+    const baseName = `${randomUUID()}.${extension || 'bin'}`;
+
+    return normalizedFolder ? `${normalizedFolder}/${baseName}` : baseName;
   }
 
   private async listBucketObjectNames(): Promise<string[]> {

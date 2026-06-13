@@ -1,4 +1,8 @@
-import PDFDocument from 'pdfkit';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import puppeteer from 'puppeteer';
+
 import { getDatabase } from '../../config/db.js';
 import { ContentCollectionEnum } from '../../core/enums/content-collection.enum.js';
 import { DatabaseCollectionEnum } from '../../core/enums/database-collection.enum.js';
@@ -7,6 +11,39 @@ import type { ContentDocument, ExperiencePeriod, ProfileDocument } from '../../c
 
 type Lang = 'es' | 'en';
 
+interface CvPdfResult {
+  buffer: Buffer;
+  fileName: string;
+}
+
+interface CvExperienceEntry {
+  company: string;
+  title: string;
+  period: string;
+  descriptionLines: string[];
+  skills: string[];
+}
+
+interface CvEducationEntry {
+  institution: string;
+  degree: string;
+  period: string;
+  descriptionLines: string[];
+  href: string;
+}
+
+interface CvCertificationEntry {
+  name: string;
+  issuer: string;
+  issuedAt: string;
+  credentialId: string;
+  href: string;
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/templates/cv-ats.html');
+
 function getText(obj: { es?: string; en?: string } | undefined, lang: Lang): string {
   if (!obj) return '';
   return (lang === 'es' ? obj.es : obj.en) || obj.es || obj.en || '';
@@ -14,6 +51,15 @@ function getText(obj: { es?: string; en?: string } | undefined, lang: Lang): str
 
 function normalizeText(value: string): string {
   return value.replace(/\s+/gu, ' ').trim();
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
 }
 
 function metaStr(metadata: Record<string, unknown> | undefined | null, key: string): string {
@@ -44,28 +90,160 @@ function formatPeriod(period: ExperiencePeriod | undefined | null, lang: Lang): 
   return `${period.start} - ${period.end}`;
 }
 
-const COLORS = {
-  ink: '#587392',
-  body: '#5c5c5c',
-  subtle: '#727272',
-  border: '#d7dee5',
-  faint: '#f7f9fb',
-  link: '#707070',
-};
+function makeDownloadFileName(fullName: string, lang: Lang): string {
+  const normalizedName = normalizeText(fullName)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .replace(/[^a-zA-Z0-9\s_-]/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
 
-const FONT = {
-  regular: 'Helvetica',
-  bold: 'Helvetica-Bold',
-  oblique: 'Helvetica-Oblique',
-};
+  const [firstName = 'portfolio', ...rest] = normalizedName.split(' ');
+  const lastName = rest.at(-1) || 'owner';
 
-export async function generateCvPdf(lang: Lang): Promise<Buffer> {
+  return `${firstName}_${lastName}_${lang}_cv.pdf`;
+}
+
+function renderListItems(items: string[]): string {
+  return items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+}
+
+function renderContactItem(value: string, href?: string): string {
+  if (!value) return '';
+  const safeValue = escapeHtml(value);
+  if (!href) return `<li>${safeValue}</li>`;
+  return `<li><a href="${escapeHtml(href)}">${safeValue}</a></li>`;
+}
+
+function replaceTemplateTokens(template: string, tokens: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/gu, (_match, key: string) => tokens[key] ?? '');
+}
+
+function renderSection(title: string, body: string): string {
+  if (!body.trim()) return '';
+  return `<section><h2>${escapeHtml(title)}</h2>${body}</section>`;
+}
+
+function renderSkillGroups(groupedSkills: Map<string, string[]>, allSkillNames: string[], lang: Lang): string {
+  const groupLabels: Record<string, { es: string; en: string }> = {
+    languages: { es: 'Lenguajes', en: 'Languages' },
+    language: { es: 'Lenguajes', en: 'Languages' },
+    backend: { es: 'Backend', en: 'Backend' },
+    frontend: { es: 'Frontend', en: 'Frontend' },
+    database: { es: 'Base de datos', en: 'Database' },
+    databases: { es: 'Base de datos', en: 'Database' },
+    devops: { es: 'DevOps', en: 'DevOps' },
+    tools: { es: 'Herramientas y extras', en: 'Tools and extras' },
+    extras: { es: 'Herramientas y extras', en: 'Tools and extras' },
+  };
+
+  const categorizedEntries = [...groupedSkills.entries()].filter(([groupName]) => Boolean(groupName));
+  if (categorizedEntries.length === 0) {
+    return `<p>${escapeHtml(allSkillNames.join(', '))}</p>`;
+  }
+
+  const html = categorizedEntries
+    .map(([groupName, skills]) => {
+      const normalizedGroupKey = groupName.trim().toLowerCase();
+      const translatedLabel = groupLabels[normalizedGroupKey];
+      const displayLabel = translatedLabel ? translatedLabel[lang] : groupName;
+      return `<p class="skill-group"><strong>${escapeHtml(displayLabel)}:</strong> ${escapeHtml(skills.join(', '))}</p>`;
+    })
+    .join('');
+
+  const uncategorizedItems = groupedSkills.get('') || [];
+  if (uncategorizedItems.length === 0) {
+    return html;
+  }
+
+  return `${html}<p class="skill-group"><strong>${lang === 'es' ? 'Otros' : 'Other'}:</strong> ${escapeHtml(uncategorizedItems.join(', '))}</p>`;
+}
+
+function renderExperience(entries: CvExperienceEntry[], lang: Lang): string {
+  return entries
+    .map((entry) => {
+      const roleTitle = entry.title && entry.title !== entry.company ? entry.title : '';
+      const header = [
+        `<h3>${escapeHtml(entry.company)}</h3>`,
+        '<div class="role-meta">',
+        roleTitle ? `<span class="position">${escapeHtml(roleTitle)}</span>` : '<span></span>',
+        entry.period ? `<span class="period">${escapeHtml(entry.period)}</span>` : '',
+        '</div>',
+      ].join('');
+      const bullets = entry.descriptionLines.length > 0 ? `<ul>${renderListItems(entry.descriptionLines)}</ul>` : '';
+      const techStack = entry.skills.length > 0
+        ? `<p class="tech-stack"><strong>${lang === 'es' ? 'Stack usado' : 'Tech stack'}:</strong> ${escapeHtml(entry.skills.join(', '))}</p>`
+        : '';
+
+      return `<article class="role">${header}${bullets}${techStack}</article>`;
+    })
+    .join('');
+}
+
+function renderEducation(entries: CvEducationEntry[], lang: Lang): string {
+  return entries
+    .map((entry) => {
+      const degree = entry.degree && entry.degree !== entry.institution ? entry.degree : '';
+      const header = [
+        `<h3>${escapeHtml(entry.institution)}</h3>`,
+        '<div class="role-meta">',
+        degree ? `<span class="position">${escapeHtml(degree)}</span>` : '<span></span>',
+        entry.period ? `<span class="period">${escapeHtml(entry.period)}</span>` : '',
+        '</div>',
+      ].join('');
+      const bullets = entry.descriptionLines.length > 0 ? `<ul>${renderListItems(entry.descriptionLines)}</ul>` : '';
+      const link = entry.href
+        ? `<p class="tech-stack"><strong>${lang === 'es' ? 'Referencia' : 'Reference'}:</strong> <a href="${escapeHtml(entry.href)}">${escapeHtml(entry.href)}</a></p>`
+        : '';
+
+      return `<article class="role">${header}${bullets}${link}</article>`;
+    })
+    .join('');
+}
+
+function renderCertifications(entries: CvCertificationEntry[], lang: Lang): string {
+  return entries
+    .map((entry) => {
+      const issuerParts = [entry.issuer, entry.issuedAt].filter(Boolean).join(' | ');
+      const credentialParts = [
+        entry.credentialId ? `${lang === 'es' ? 'Credencial' : 'Credential'}: ${entry.credentialId}` : '',
+        entry.href,
+      ].filter(Boolean);
+
+      return [
+        '<article class="role">',
+        `<h3>${escapeHtml(entry.name)}</h3>`,
+        issuerParts ? `<p class="tech-stack">${escapeHtml(issuerParts)}</p>` : '',
+        credentialParts.length > 0
+          ? `<p class="tech-stack">${credentialParts
+            .map((part) => entry.href && part === entry.href
+              ? `<a href="${escapeHtml(part)}">${escapeHtml(part)}</a>`
+              : escapeHtml(part))
+            .join(' | ')}</p>`
+          : '',
+        '</article>',
+      ].join('');
+    })
+    .join('');
+}
+
+export async function generateCvPdf(lang: Lang): Promise<CvPdfResult> {
   const database = getDatabase();
 
-  const [profile, experience, techSkills, socialLinks] = await Promise.all([
+  const [profile, experience, education, certifications, techSkills, socialLinks] = await Promise.all([
     database.collection<ProfileDocument>(DatabaseCollectionEnum.PROFILE).findOne({ key: ProfileKeyEnum.MAIN_PROFILE }),
     database
       .collection<ContentDocument>(ContentCollectionEnum.EXPERIENCE)
+      .find({ active: true })
+      .sort({ order: 1, createdAt: -1 })
+      .toArray(),
+    database
+      .collection<ContentDocument>(ContentCollectionEnum.EDUCATION)
+      .find({ active: true })
+      .sort({ order: 1, createdAt: -1 })
+      .toArray(),
+    database
+      .collection<ContentDocument>(ContentCollectionEnum.CERTIFICATIONS)
       .find({ active: true })
       .sort({ order: 1, createdAt: -1 })
       .toArray(),
@@ -124,314 +302,93 @@ export async function generateCvPdf(lang: Lang): Promise<Buffer> {
     groupedSkills.set(groupName, bucket);
   }
 
-  const chunks: Buffer[] = [];
+  const experienceEntries = experience.map((entry): CvExperienceEntry => {
+    const company = normalizeText(getText(entry.label, lang) || getText(entry.title, lang));
+    const title = normalizeText(metaStr(entry.metadata, 'position') || getText(entry.title, lang));
+    const experienceSkillIds = metaStringArray(entry.metadata, 'skillIds');
+    const skills = [...new Set(
+      experienceSkillIds
+        .map((skillId) => skillMap.get(skillId) || '')
+        .filter(Boolean),
+    )];
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: { top: 44, bottom: 44, left: 54, right: 54 },
-      info: {
-        Title: lang === 'es' ? `CV - ${fullName}` : `Resume - ${fullName}`,
-        Author: fullName,
-      },
+    return {
+      company,
+      title,
+      period: formatPeriod(entry.period, lang),
+      descriptionLines: splitMultilineText(getText(entry.description, lang)),
+      skills,
+    };
+  });
+
+  const educationEntries = education.map((entry): CvEducationEntry => ({
+    institution: normalizeText(getText(entry.label, lang) || getText(entry.title, lang)),
+    degree: normalizeText(metaStr(entry.metadata, 'degree') || getText(entry.title, lang)),
+    period: formatPeriod(entry.period, lang),
+    descriptionLines: splitMultilineText(getText(entry.description, lang)),
+    href: normalizeText(entry.href || ''),
+  }));
+
+  const certificationEntries = certifications.map((entry): CvCertificationEntry => {
+    const issuer =
+      metaStr(entry.metadata, 'issuer') ||
+      metaStr(entry.metadata, 'platform') ||
+      normalizeText(getText(entry.label, lang));
+
+    return {
+      name: normalizeText(getText(entry.title, lang) || getText(entry.label, lang)),
+      issuer,
+      issuedAt: metaStr(entry.metadata, 'issuedAt') || metaStr(entry.metadata, 'date') || formatPeriod(entry.period, lang),
+      credentialId: metaStr(entry.metadata, 'credentialId') || metaStr(entry.metadata, 'credential'),
+      href: normalizeText(entry.href || (typeof entry.value === 'string' ? entry.value : '')),
+    };
+  });
+
+  const template = await readFile(TEMPLATE_PATH, 'utf-8');
+  const contactItems = [
+    renderContactItem(location),
+    renderContactItem(phone),
+    renderContactItem(email, email ? `mailto:${email}` : undefined),
+    ...socialEntries.map((entry) => renderContactItem(entry.href || entry.label, entry.href || undefined)),
+  ].join('');
+  const html = replaceTemplateTokens(template, {
+    lang,
+    documentTitle: escapeHtml(lang === 'es' ? `CV - ${fullName}` : `Resume - ${fullName}`),
+    fullName: escapeHtml(fullName),
+    headline: escapeHtml(headline),
+    contactItems,
+    summarySection: about
+      ? renderSection(lang === 'es' ? 'Perfil profesional' : 'Professional Summary', `<p class="summary">${escapeHtml(about)}</p>`)
+      : '',
+    skillsSection: allSkillNames.length > 0
+      ? renderSection(lang === 'es' ? 'Habilidades técnicas' : 'Technical Skills', renderSkillGroups(groupedSkills, allSkillNames, lang))
+      : '',
+    experienceSection: renderSection(lang === 'es' ? 'Experiencia profesional' : 'Professional Experience', renderExperience(experienceEntries, lang)),
+    educationSection: renderSection(lang === 'es' ? 'Educación' : 'Education', renderEducation(educationEntries, lang)),
+    certificationsSection: renderSection(lang === 'es' ? 'Certificaciones' : 'Certifications', renderCertifications(certificationEntries, lang)),
+  });
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      tagged: true,
+      displayHeaderFooter: false,
     });
 
-    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-    const pageBottom = doc.page.height - doc.page.margins.bottom;
-
-    const ensureSpace = (neededHeight: number) => {
-      if (doc.y + neededHeight <= pageBottom - 28) {
-        return;
-      }
-
-      doc.addPage();
-      doc.y = doc.page.margins.top;
+    return {
+      buffer: Buffer.from(pdf),
+      fileName: makeDownloadFileName(fullName, lang),
     };
-
-    const divider = () => {
-      doc
-        .moveTo(doc.page.margins.left + 34, doc.y)
-        .lineTo(doc.page.margins.left + pageWidth - 34, doc.y)
-        .strokeColor(COLORS.border)
-        .lineWidth(1)
-        .stroke();
-      doc.moveDown(0.65);
-    };
-
-    const sectionTitle = (title: string) => {
-      ensureSpace(36);
-      doc.moveDown(0.3);
-      doc
-        .fillColor(COLORS.ink)
-        .font(FONT.bold)
-        .fontSize(11)
-        .text(title.toUpperCase(), doc.page.margins.left, doc.y, {
-          width: pageWidth,
-          align: 'center',
-          characterSpacing: 2.3,
-        });
-      doc.moveDown(0.38);
-      divider();
-    };
-
-    const renderLinkRow = (values: string[]) => {
-      const line = values.filter(Boolean).join('  |  ');
-      if (!line) return;
-      doc
-        .fillColor(COLORS.link)
-        .font(FONT.regular)
-        .fontSize(9.8)
-        .text(line, doc.page.margins.left, doc.y, { width: pageWidth, align: 'center' });
-      doc.moveDown(0.14);
-    };
-
-    const renderBulletList = (items: string[], options?: { x?: number; width?: number; fontSize?: number; color?: string }) => {
-      const x = options?.x ?? doc.page.margins.left + 14;
-      const width = options?.width ?? pageWidth - 28;
-      const fontSize = options?.fontSize ?? 10.2;
-      const color = options?.color ?? COLORS.body;
-
-      for (const item of items) {
-        const text = normalizeText(item);
-        if (!text) continue;
-        ensureSpace(18);
-        doc
-          .fillColor(color)
-          .font(FONT.regular)
-          .fontSize(fontSize)
-          .text(`- ${text}`, x, doc.y, {
-            width,
-            align: 'left',
-            lineGap: 0.4,
-          });
-        doc.moveDown(0.04);
-      }
-    };
-
-    const renderSkillStack = (title: string, skills: string[]) => {
-      if (skills.length === 0) return;
-      ensureSpace(18);
-      doc
-        .fillColor(COLORS.body)
-        .font(FONT.bold)
-        .fontSize(9.6)
-        .text(title, doc.page.margins.left + 22, doc.y, { continued: true });
-      doc
-        .fillColor(COLORS.subtle)
-        .font(FONT.regular)
-        .fontSize(9.6)
-        .text(skills.join(', '), {
-          width: pageWidth - 40,
-          align: 'left',
-          lineGap: 0.4,
-        });
-      doc.moveDown(0.08);
-    };
-
-    const experienceDivider = () => {
-      doc
-        .moveTo(doc.page.margins.left + 4, doc.y)
-        .lineTo(doc.page.margins.left + pageWidth - 4, doc.y)
-        .strokeColor(COLORS.border)
-        .lineWidth(0.8)
-        .stroke();
-      doc.moveDown(0.5);
-    };
-
-    const renderSkillGroups = () => {
-      const categorizedEntries = [...groupedSkills.entries()].filter(([groupName]) => Boolean(groupName));
-      const uncategorizedItems = groupedSkills.get('') || [];
-
-      if (categorizedEntries.length === 0) {
-        renderBulletList(allSkillNames, {
-          x: doc.page.margins.left + 18,
-          width: pageWidth - 36,
-          fontSize: 10.8,
-        });
-        return;
-      }
-
-      const groupLabels: Record<string, { es: string; en: string }> = {
-        languages: { es: 'Lenguajes', en: 'Languages' },
-        language: { es: 'Lenguajes', en: 'Languages' },
-        backend: { es: 'Backend', en: 'Backend' },
-        frontend: { es: 'Frontend', en: 'Frontend' },
-        database: { es: 'Base de datos', en: 'Database' },
-        databases: { es: 'Base de datos', en: 'Database' },
-        devops: { es: 'DevOps', en: 'DevOps' },
-        tools: { es: 'Herramientas y extras', en: 'Tools and extras' },
-        extras: { es: 'Herramientas y extras', en: 'Tools and extras' },
-      };
-
-      for (const [groupName, skills] of categorizedEntries) {
-        ensureSpace(28);
-        const normalizedGroupKey = groupName.trim().toLowerCase();
-        const translatedLabel = groupLabels[normalizedGroupKey];
-        const displayLabel = translatedLabel ? translatedLabel[lang] : groupName;
-
-        doc
-          .fillColor(COLORS.subtle)
-          .font(FONT.bold)
-          .fontSize(10.1)
-          .text(`- ${displayLabel}: `, doc.page.margins.left + 14, doc.y, { continued: true });
-        doc
-          .fillColor(COLORS.body)
-          .font(FONT.regular)
-          .fontSize(10.1)
-          .text(skills.join(', '), {
-            width: pageWidth - 28,
-            lineGap: 0.4,
-          });
-        doc.moveDown(0.05);
-      }
-
-      if (uncategorizedItems.length > 0) {
-        renderBulletList(uncategorizedItems, {
-          x: doc.page.margins.left + 14,
-          width: pageWidth - 28,
-          fontSize: 10.1,
-        });
-      }
-    };
-
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
-
-    doc.y = 34;
-
-    doc
-      .fillColor(COLORS.ink)
-      .font(FONT.bold)
-      .fontSize(32)
-      .text(fullName.toUpperCase(), doc.page.margins.left, doc.y, {
-        width: pageWidth,
-        align: 'center',
-        characterSpacing: 4.2,
-      });
-
-    doc.moveDown(1.05);
-
-    if (headline) {
-      doc
-        .fillColor(COLORS.subtle)
-        .font(FONT.regular)
-        .fontSize(9.6)
-        .text(headline, doc.page.margins.left, doc.y, { width: pageWidth, align: 'center' });
-      doc.moveDown(0.18);
-    }
-
-    const primaryContact = [location, phone].filter(Boolean);
-    if (primaryContact.length > 0) {
-      doc
-        .fillColor(COLORS.link)
-        .font(FONT.regular)
-        .fontSize(9.5)
-        .text(primaryContact.join('  |  '), doc.page.margins.left, doc.y, { width: pageWidth, align: 'center' });
-      doc.moveDown(0.08);
-    }
-
-    renderLinkRow(email ? [email] : []);
-    renderLinkRow(socialEntries.slice(0, 2).map((entry) => entry.href || entry.label));
-    renderLinkRow(socialEntries.slice(2).map((entry) => entry.href || entry.label));
-
-    doc.moveDown(0.36);
-
-    if (about) {
-      sectionTitle(lang === 'es' ? 'Sobre mí' : 'About me');
-      doc
-        .fillColor(COLORS.body)
-        .font(FONT.oblique)
-        .fontSize(10.25)
-        .text(about, doc.page.margins.left + 18, doc.y, {
-          width: pageWidth - 36,
-          align: 'justify',
-          lineGap: 0.8,
-        });
-      doc.moveDown(0.62);
-    }
-
-    if (allSkillNames.length > 0) {
-      sectionTitle(lang === 'es' ? 'Habilidades técnicas' : 'Tech skills');
-      renderSkillGroups();
-      doc.moveDown(0.45);
-    }
-
-    if (experience.length > 0) {
-      sectionTitle(lang === 'es' ? 'Experiencia' : 'Experience');
-
-      for (const [index, entry] of experience.entries()) {
-        const company = normalizeText(getText(entry.label, lang) || getText(entry.title, lang));
-        const period = formatPeriod(entry.period, lang);
-        const description = getText(entry.description, lang);
-        const title = normalizeText(metaStr(entry.metadata, 'position') || getText(entry.title, lang));
-        const experienceSkillIds = metaStringArray(entry.metadata, 'skillIds');
-        const experienceSkills = [...new Set(
-          experienceSkillIds
-            .map((skillId) => skillMap.get(skillId) || '')
-            .filter(Boolean),
-        )];
-        const descriptionLines = splitMultilineText(description);
-        const estimatedHeight =
-          16 +
-          (title && title !== company ? 12 : 0) +
-          descriptionLines.length * 12 +
-          (experienceSkills.length ? 12 : 0) +
-          (index < experience.length - 1 ? 22 : 0);
-
-        ensureSpace(estimatedHeight);
-
-        doc
-          .font(FONT.bold)
-          .fontSize(10.3)
-          .fillColor(COLORS.body)
-          .text(company, doc.page.margins.left, doc.y, {
-            width: pageWidth * 0.6,
-            align: 'left',
-            continued: Boolean(period),
-          });
-
-        if (period) {
-          doc
-            .font(FONT.bold)
-            .fontSize(9.9)
-            .fillColor(COLORS.body)
-            .text(period, {
-              width: pageWidth,
-              align: 'right',
-              underline: true,
-            });
-        } else {
-          doc.moveDown(0.1);
-        }
-
-        if (title && title !== company) {
-          doc
-            .font(FONT.regular)
-            .fontSize(9.8)
-            .fillColor(COLORS.subtle)
-            .text(title, doc.page.margins.left + 2, doc.y, { width: pageWidth });
-          doc.moveDown(0.08);
-        }
-
-        if (descriptionLines.length > 0) {
-          renderBulletList(descriptionLines, {
-            x: doc.page.margins.left + 12,
-            width: pageWidth - 24,
-            fontSize: 9.9,
-          });
-        }
-
-        renderSkillStack(lang === 'es' ? 'Stack usado: ' : 'Tech stack: ', experienceSkills);
-
-        doc.moveDown(0.42);
-
-        if (index < experience.length - 1) {
-          experienceDivider();
-        }
-      }
-    }
-
-    doc.end();
-  });
+  } finally {
+    await browser.close();
+  }
 }
