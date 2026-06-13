@@ -1,5 +1,6 @@
 import compression from 'compression';
 import cors from 'cors';
+import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -8,9 +9,8 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import url from 'url';
 import { env } from './config/env.js';
-import { readSwaggerDocument, withSwaggerServer } from './docs/swagger.js';
 import type { SwaggerDocument } from './core/types/swagger.js';
-import type { NextFunction, Request, Response } from 'express';
+import { readSwaggerDocument, withSwaggerServer } from './docs/swagger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
 import { apiRoutes } from './routes/index.js';
 
@@ -121,8 +121,8 @@ export function createApp() {
   );
   app.use('/api', apiRoutes);
   app.use('/', (_req, res) => {
-    res.status(200).json({ message: 'Portfolio API Running 🚀', corsOrigin: env.corsOrigin });
-  } );
+    res.status(200).json({ message: 'Portfolio API Running 🚀' });
+  });
   app.use(notFoundHandler);
   app.use(errorHandler);
 
