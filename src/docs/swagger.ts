@@ -327,6 +327,19 @@ function normalizeServerUrl(rawUrl: string) {
   return `${parsedUrl.protocol}//${parsedUrl.host}`;
 }
 
+function prefixRoutePath(prefix: string, routePath: string) {
+  const duplicatedPrefix = `${prefix}${prefix}/`;
+  if (routePath.startsWith(duplicatedPrefix)) {
+    return `${prefix}/${routePath.slice(duplicatedPrefix.length)}`;
+  }
+
+  if (routePath === prefix || routePath.startsWith(`${prefix}/`)) {
+    return routePath;
+  }
+
+  return `${prefix}${routePath.startsWith('/') ? routePath : `/${routePath}`}`;
+}
+
 function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocument {
   const sourcePaths = swaggerDocument.paths ?? {};
   const normalizedPaths: SwaggerPathMap = {};
@@ -337,29 +350,34 @@ function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocum
       const tag = getFirstTag(operation);
 
       if (tag === 'Projects') {
-        if (routePath === '/') addPath(normalizedPaths, '/api/projects', method, operation);
+        if (routePath.startsWith('/api/projects')) addPath(normalizedPaths, prefixRoutePath('/api/projects', routePath), method, operation);
+        else if (routePath === '/') addPath(normalizedPaths, '/api/projects', method, operation);
         else if (routePath === '/{idOrSlug}') addPath(normalizedPaths, '/api/projects/{idOrSlug}', method, operation);
         else if (routePath === '/{id}') addPath(normalizedPaths, '/api/projects/{id}', method, operation);
         continue;
       }
 
       if (tag === 'Contact') {
-        addPath(normalizedPaths, `/api/contact${routePath}`, method, operation);
+        addPath(normalizedPaths, prefixRoutePath('/api/contact', routePath), method, operation);
         continue;
       }
 
       if (tag === 'Analytics') {
-        addPath(normalizedPaths, `/api/analytics${routePath}`, method, operation);
+        addPath(normalizedPaths, prefixRoutePath('/api/analytics', routePath), method, operation);
         continue;
       }
 
       if (tag === 'Admin') {
-        const normalizedAdminPath = routePath.startsWith('/api/admin') ? routePath : `/api/admin${routePath}`;
-        addPath(normalizedPaths, normalizedAdminPath, method, operation);
+        addPath(normalizedPaths, prefixRoutePath('/api/admin', routePath), method, operation);
         continue;
       }
 
       if (tag === 'Content') {
+        if (routePath.startsWith('/api/content/')) {
+          addPath(normalizedPaths, prefixRoutePath('/api/content', routePath), method, operation);
+          continue;
+        }
+
         if (routePath === '/profile') {
           addPath(normalizedPaths, '/api/content/profile', method, operation);
           continue;
@@ -379,6 +397,8 @@ function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocum
           continue;
         }
       }
+
+      addPath(normalizedPaths, routePath, method, operation);
     }
   }
 
@@ -390,6 +410,17 @@ function normalizeGeneratedPaths(swaggerDocument: SwaggerDocument): SwaggerDocum
       },
     ],
     paths: normalizedPaths,
+  };
+}
+
+export function withSwaggerServer(swaggerDocument: SwaggerDocument, baseUrl: string): SwaggerDocument {
+  return {
+    ...swaggerDocument,
+    servers: [
+      {
+        url: normalizeServerUrl(baseUrl),
+      },
+    ],
   };
 }
 
@@ -422,7 +453,8 @@ export function readSwaggerDocument(): JsonObject {
     return doc as JsonObject;
   }
 
-  return JSON.parse(fs.readFileSync(swaggerFile, 'utf-8')) as JsonObject;
+  const swaggerDocument = JSON.parse(fs.readFileSync(swaggerFile, 'utf-8')) as SwaggerDocument;
+  return normalizeGeneratedPaths(swaggerDocument) as JsonObject;
 }
 
 const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === __filename;

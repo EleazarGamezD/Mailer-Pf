@@ -8,7 +8,9 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import url from 'url';
 import { env } from './config/env.js';
-import { readSwaggerDocument } from './docs/swagger.js';
+import { readSwaggerDocument, withSwaggerServer } from './docs/swagger.js';
+import type { SwaggerDocument } from './core/types/swagger.js';
+import type { NextFunction, Request, Response } from 'express';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
 import { apiRoutes } from './routes/index.js';
 
@@ -19,9 +21,13 @@ function normalizeCorsOrigin(origin: string) {
   return origin.trim().replace(/\/+$/u, '');
 }
 
+function getRequestBaseUrl(req: express.Request) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
 export function createApp() {
   const app = express();
-  const swaggerDocument = readSwaggerDocument();
+  const swaggerDocument = readSwaggerDocument() as SwaggerDocument;
   const swaggerUiVersion = '5.32.4';
   const swaggerCdnBase = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${swaggerUiVersion}`;
   const allowedOrigins = env.corsOrigin === '*'
@@ -93,10 +99,15 @@ export function createApp() {
     });
   });
 
+  app.get('/docs/swagger.json', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json(withSwaggerServer(swaggerDocument, getRequestBaseUrl(req)));
+  });
+
   app.use(
     '/docs',
     swaggerUi.serve,
-    swaggerUi.setup(swaggerDocument, {
+    (req: Request, res: Response, next: NextFunction) => swaggerUi.setup(withSwaggerServer(swaggerDocument, getRequestBaseUrl(req)), {
       explorer: true,
       customCssUrl: `${swaggerCdnBase}/swagger-ui.css`,
       customJs: [
@@ -106,7 +117,7 @@ export function createApp() {
       swaggerOptions: {
         persistAuthorization: true,
       },
-    }),
+    })(req, res, next),
   );
   app.use('/api', apiRoutes);
   app.use('/', (_req, res) => {
