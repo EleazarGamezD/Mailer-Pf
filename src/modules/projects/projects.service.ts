@@ -15,6 +15,7 @@ import { parseObjectId } from '../../utils/object-id.js';
 import { buildUniqueProjectSlug } from '../../utils/project-slug.js';
 import { ContentRepository } from '../content/content.repository.js';
 import { fileService } from '../files/index.js';
+import { resolveGitHubStats } from './github-stats.service.js';
 import { ProjectsRepository } from './projects.repository.js';
 
 const projectsRepository = new ProjectsRepository();
@@ -60,6 +61,7 @@ async function normalizeProjectPayload(
 
 async function resolveProjectAssets(project: ProjectDocument): Promise<ResolvedProjectDocument> {
   const skills = await resolveProjectSkills(project.skillIds);
+  const githubStats = await resolveGitHubStats(project.codeLink, project.projectLink);
   const primarySkill = project.primarySkillId
     ? skills.find((skill) => skill._id === project.primarySkillId) ?? null
     : null;
@@ -76,6 +78,7 @@ async function resolveProjectAssets(project: ProjectDocument): Promise<ResolvedP
       (image): image is string | StoredImageAsset => image !== null,
     ),
     coverImage: await fileService.resolveImageAsset(project.coverImage),
+    githubStats,
   };
 }
 

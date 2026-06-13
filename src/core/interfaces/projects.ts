@@ -11,6 +11,14 @@ export interface ResolvedTechSkill {
   icon: string | null;
 }
 
+export interface GitHubRepositoryStats {
+  owner: string;
+  repo: string;
+  url: string;
+  stars: number;
+  forks: number;
+}
+
 export interface ResolvedProjectDocument {
   _id?: ProjectDocument['_id'];
   slug: string;
@@ -26,6 +34,7 @@ export interface ResolvedProjectDocument {
   coverImage: string | StoredImageAsset | null;
   projectLink: string;
   codeLink: string;
+  githubStats: GitHubRepositoryStats | null;
   featured: boolean;
   status: string;
   publishedAt: string | null;
