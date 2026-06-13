@@ -1,0 +1,773 @@
+openapi: 3.0.3
+info:
+  title: Portfolio Dynamic API
+  version: 1.0.0
+  description: API para administrar el portfolio dinamico, contacto, analiticas y contenido editable.
+servers:
+  - url: __API_BASE_URL__
+tags:
+  - name: Health
+  - name: Contact
+  - name: Analytics
+  - name: Admin
+  - name: Projects
+  - name: Content
+  - name: Themes
+  - name: Translate
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service status
+
+  /api/contact/send:
+    post:
+      tags: [Contact]
+      summary: Send contact email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactPayload'
+      responses:
+        '200':
+          description: Contact email result
+
+  /api/contact/verify-captcha:
+    post:
+      tags: [Contact]
+      summary: Verify captcha token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Captcha verification result
+
+  /api/analytics/event:
+    post:
+      tags: [Analytics]
+      summary: Register analytics event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Event registered
+
+  /api/analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get public analytics dashboard
+      responses:
+        '200':
+          description: Analytics dashboard metrics
+
+  /api/admin/auth/login:
+    post:
+      tags: [Admin]
+      summary: Login admin user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authenticated admin session
+
+  /api/admin/auth/setup-account:
+    post:
+      tags: [Admin]
+      summary: Complete first-time account setup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Account setup result
+
+  /api/admin/auth/forgot-password:
+    post:
+      tags: [Admin]
+      summary: Request password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Password reset request result
+
+  /api/admin/auth/reset-password:
+    post:
+      tags: [Admin]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password reset result
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List admin users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin users list
+    post:
+      tags: [Admin]
+      summary: Create admin user
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserPayload'
+      responses:
+        '201':
+          description: Admin user created
+
+  /api/admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Update admin user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserPayload'
+      responses:
+        '200':
+          description: Admin user updated
+
+  /api/admin/me:
+    get:
+      tags: [Admin]
+      summary: Get current admin user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current admin user
+
+  /api/admin/seed-status:
+    get:
+      tags: [Admin]
+      summary: Get seed status
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Seed status
+
+  /api/admin/dashboard/metrics:
+    get:
+      tags: [Admin]
+      summary: Get admin dashboard metrics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/year'
+        - $ref: '#/components/parameters/month'
+        - $ref: '#/components/parameters/day'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+      responses:
+        '200':
+          description: Dashboard metrics
+
+  /api/admin/seed-initial:
+    post:
+      tags: [Admin]
+      summary: Run initial MongoDB seed
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Seed executed
+
+  /api/admin/seed-themes:
+    post:
+      tags: [Admin]
+      summary: Seed default themes
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: force
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Theme seed executed
+
+  /api/admin/seed-demo-personal:
+    post:
+      tags: [Admin]
+      summary: Run personal demo seed
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Demo seed executed
+
+  /api/projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+      responses:
+        '200':
+          description: Projects list
+    post:
+      tags: [Projects]
+      summary: Create project
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectPayload'
+      responses:
+        '201':
+          description: Project created
+
+  /api/projects/{idOrSlug}:
+    get:
+      tags: [Projects]
+      summary: Get project by id or slug
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project detail
+    patch:
+      tags: [Projects]
+      summary: Update project
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectPayload'
+      responses:
+        '200':
+          description: Project updated
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project deleted
+
+  /api/content/profile:
+    get:
+      tags: [Content]
+      summary: Get profile content
+      responses:
+        '200':
+          description: Profile content
+    put:
+      tags: [Content]
+      summary: Upsert profile content
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfilePayload'
+      responses:
+        '200':
+          description: Profile saved
+
+  /api/content/resumes/generate-pdf:
+    get:
+      tags: [Content]
+      summary: Generate CV PDF
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [es, en]
+      responses:
+        '200':
+          description: Generated PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/content/{resource}:
+    get:
+      tags: [Content]
+      summary: List content resource
+      parameters:
+        - $ref: '#/components/parameters/resource'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+      responses:
+        '200':
+          description: Content resource list
+    post:
+      tags: [Content]
+      summary: Create content item
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/resource'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentPayload'
+      responses:
+        '201':
+          description: Content item created
+
+  /api/content/{resource}/{id}:
+    patch:
+      tags: [Content]
+      summary: Update content item
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/resource'
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentPayload'
+      responses:
+        '200':
+          description: Content item updated
+    delete:
+      tags: [Content]
+      summary: Delete content item
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/resource'
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Content item deleted
+
+  /api/themes:
+    get:
+      tags: [Themes]
+      summary: List themes
+      responses:
+        '200':
+          description: Themes list
+    post:
+      tags: [Themes]
+      summary: Create theme
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Theme created
+
+  /api/themes/active:
+    get:
+      tags: [Themes]
+      summary: Get active theme
+      responses:
+        '200':
+          description: Active theme
+
+  /api/themes/generate-palette:
+    get:
+      tags: [Themes]
+      summary: Generate color palette
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: hex
+          in: query
+          schema:
+            type: string
+        - name: mode
+          in: query
+          schema:
+            type: string
+        - name: seed
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Generated palette
+
+  /api/themes/{id}:
+    patch:
+      tags: [Themes]
+      summary: Update theme
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Theme updated
+    delete:
+      tags: [Themes]
+      summary: Delete theme
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Theme deleted
+
+  /api/themes/{id}/activate:
+    post:
+      tags: [Themes]
+      summary: Activate theme
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Theme activated
+
+  /api/translate:
+    post:
+      tags: [Translate]
+      summary: Translate text
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, targetLang]
+              properties:
+                text:
+                  type: string
+                targetLang:
+                  type: string
+                  enum: [es, en]
+      responses:
+        '200':
+          description: Translation result
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    resource:
+      name: resource
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - techSkills
+          - experience
+          - education
+          - certifications
+          - socialLinks
+          - resumes
+          - testimonials
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+    sortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+    sortOrder:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+    year:
+      name: year
+      in: query
+      schema:
+        type: integer
+    month:
+      name: month
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    day:
+      name: day
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 31
+    from:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date-time
+    to:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date-time
+  schemas:
+    LocalizedText:
+      type: object
+      properties:
+        es:
+          type: string
+        en:
+          type: string
+    ContactPayload:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        subject:
+          type: string
+        message:
+          type: string
+    AdminUserPayload:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        displayName:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [super_admin, admin, editor]
+        active:
+          type: boolean
+    ProjectPayload:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          $ref: '#/components/schemas/LocalizedText'
+        summary:
+          $ref: '#/components/schemas/LocalizedText'
+        description:
+          $ref: '#/components/schemas/LocalizedText'
+        stack:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        coverImage:
+          nullable: true
+        projectLink:
+          type: string
+        codeLink:
+          type: string
+        featured:
+          type: boolean
+        status:
+          type: string
+        publishedAt:
+          type: string
+    ProfilePayload:
+      type: object
+      properties:
+        key:
+          type: string
+        slug:
+          type: string
+        label:
+          $ref: '#/components/schemas/LocalizedText'
+        title:
+          $ref: '#/components/schemas/LocalizedText'
+        description:
+          $ref: '#/components/schemas/LocalizedText'
+        availability:
+          type: string
+        location:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    ContentPayload:
+      type: object
+      properties:
+        slug:
+          type: string
+        label:
+          $ref: '#/components/schemas/LocalizedText'
+        title:
+          $ref: '#/components/schemas/LocalizedText'
+        description:
+          $ref: '#/components/schemas/LocalizedText'
+        value:
+          nullable: true
+        icon:
+          nullable: true
+        href:
+          type: string
+        order:
+          type: integer
+        active:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        base64:
+          type: string

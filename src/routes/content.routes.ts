@@ -22,7 +22,6 @@ export const contentRouter = Router();
 contentRouter.get(
   '/profile',
   asyncHandler(async (_req, res) => {
-    // #swagger.tags = ['Content']
     res.json(await getProfile());
   }),
 );
@@ -31,8 +30,6 @@ contentRouter.put(
   '/profile',
   requireApiKey,
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Content']
-    // #swagger.security = [{ "ApiKeyAuth": [] }]
     res.json(await upsertProfile(req.body as ProfilePayload));
   }),
 );
@@ -40,7 +37,6 @@ contentRouter.put(
 contentRouter.get(
   '/resumes/generate-pdf',
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Content']
     const lang = req.query['lang'] === 'en' ? 'en' : 'es';
     const { buffer, fileName } = await generateCvPdf(lang);
     res.setHeader('Content-Type', 'application/pdf');
@@ -56,7 +52,6 @@ for (const resourceName of resourceNames) {
   contentRouter.get(
     `/${resourceName}`,
     asyncHandler(async (req, res) => {
-      // #swagger.tags = ['Content']
       const paginationOptions = parsePaginationQuery(req.query as ContentListQuery);
 
       if (!hasPaginationQuery(paginationOptions)) {
@@ -72,8 +67,6 @@ for (const resourceName of resourceNames) {
     `/${resourceName}`,
     requireApiKey,
     asyncHandler(async (req, res) => {
-      // #swagger.tags = ['Content']
-      // #swagger.security = [{ "ApiKeyAuth": [] }]
       res.status(201).json(await createContentItem(resourceName, req.body as ContentPayload));
     }),
   );
@@ -82,8 +75,6 @@ for (const resourceName of resourceNames) {
     `/${resourceName}/:id`,
     requireApiKey,
     asyncHandler(async (req, res) => {
-      // #swagger.tags = ['Content']
-      // #swagger.security = [{ "ApiKeyAuth": [] }]
       res.json(
         await updateContentItem(
           resourceName,
@@ -98,8 +89,6 @@ for (const resourceName of resourceNames) {
     `/${resourceName}/:id`,
     requireApiKey,
     asyncHandler(async (req, res) => {
-      // #swagger.tags = ['Content']
-      // #swagger.security = [{ "ApiKeyAuth": [] }]
       res.json(await deleteContentItem(resourceName, getSingleParam(req.params.id, 'id')));
     }),
   );

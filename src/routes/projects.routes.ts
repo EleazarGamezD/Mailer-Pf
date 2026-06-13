@@ -18,7 +18,6 @@ export const projectsRouter = Router();
 projectsRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
-    // #swagger.tags = ['Projects']
     const query = _req.query as ProjectListQuery;
     const hasPaginationQuery =
       typeof query.page === 'string' ||
@@ -48,7 +47,6 @@ projectsRouter.get(
 projectsRouter.get(
   '/:idOrSlug',
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Projects']
     res.json(await getProjectByIdOrSlug(getSingleParam(req.params.idOrSlug, 'idOrSlug')));
   }),
 );
@@ -57,8 +55,6 @@ projectsRouter.post(
   '/',
   requireApiKey,
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Projects']
-    // #swagger.security = [{ "ApiKeyAuth": [] }]
     res.status(201).json(await createProject(req.body as ProjectPayload));
   }),
 );
@@ -67,8 +63,6 @@ projectsRouter.patch(
   '/:id',
   requireApiKey,
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Projects']
-    // #swagger.security = [{ "ApiKeyAuth": [] }]
     res.json(await updateProject(getSingleParam(req.params.id, 'id'), req.body as ProjectPayload));
   }),
 );
@@ -77,8 +71,6 @@ projectsRouter.delete(
   '/:id',
   requireApiKey,
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Projects']
-    // #swagger.security = [{ "ApiKeyAuth": [] }]
     res.json(await deleteProject(getSingleParam(req.params.id, 'id')));
   }),
 );

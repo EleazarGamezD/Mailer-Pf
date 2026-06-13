@@ -9,7 +9,6 @@ export const contactRouter = Router();
 contactRouter.post(
   '/send',
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Contact']
     res.json(await sendContactEmail(req.body as ContactPayload));
   }),
 );
@@ -17,7 +16,6 @@ contactRouter.post(
 contactRouter.post(
   '/verify-captcha',
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Contact']
     res.json(await verifyCaptcha(req.body as CaptchaPayload));
   }),
 );

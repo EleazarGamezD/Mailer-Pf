@@ -1,6 +1,6 @@
+import fs from 'fs';
 import compression from 'compression';
 import cors from 'cors';
-import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -9,8 +9,6 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import url from 'url';
 import { env } from './config/env.js';
-import type { SwaggerDocument } from './core/types/swagger.js';
-import { readSwaggerDocument, withSwaggerServer } from './docs/swagger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
 import { apiRoutes } from './routes/index.js';
 
@@ -22,12 +20,15 @@ function normalizeCorsOrigin(origin: string) {
 }
 
 function getRequestBaseUrl(req: express.Request) {
-  return `${req.protocol}://${req.get('host')}`;
+  const protocol = req.get('x-forwarded-proto') ?? req.protocol;
+  const host = req.get('x-forwarded-host') ?? req.get('host');
+  return `${protocol}://${host}`;
 }
 
 export function createApp() {
   const app = express();
-  const swaggerDocument = readSwaggerDocument() as SwaggerDocument;
+  const openApiFile = path.join(__dirname, 'docs', 'openapi.yml');
+  const openApiTemplate = fs.readFileSync(openApiFile, 'utf-8');
   const swaggerUiVersion = '5.32.4';
   const swaggerCdnBase = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${swaggerUiVersion}`;
   const allowedOrigins = env.corsOrigin === '*'
@@ -99,15 +100,16 @@ export function createApp() {
     });
   });
 
-  app.get('/docs/swagger.json', (req, res) => {
+  app.get(['/docs/openapi.yml', '/docs/swagger.yml'], (req, res) => {
     res.set('Cache-Control', 'no-store');
-    res.json(withSwaggerServer(swaggerDocument, getRequestBaseUrl(req)));
+    res.type('application/yaml');
+    res.send(openApiTemplate.replace('__API_BASE_URL__', getRequestBaseUrl(req)));
   });
 
   app.use(
     '/docs',
     swaggerUi.serve,
-    (req: Request, res: Response, next: NextFunction) => swaggerUi.setup(withSwaggerServer(swaggerDocument, getRequestBaseUrl(req)), {
+    swaggerUi.setup(undefined, {
       explorer: true,
       customCssUrl: `${swaggerCdnBase}/swagger-ui.css`,
       customJs: [
@@ -115,9 +117,10 @@ export function createApp() {
         `${swaggerCdnBase}/swagger-ui-standalone-preset.js`,
       ],
       swaggerOptions: {
+        url: '/docs/openapi.yml',
         persistAuthorization: true,
       },
-    })(req, res, next),
+    }),
   );
   app.use('/api', apiRoutes);
   app.use('/', (_req, res) => {

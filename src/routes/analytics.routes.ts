@@ -9,7 +9,6 @@ export const analyticsRouter = Router();
 analyticsRouter.post(
   '/event',
   asyncHandler(async (req, res) => {
-    // #swagger.tags = ['Analytics']
     res.status(201).json(await registerAnalyticsEvent(req.body as AnalyticsEventPayload));
   }),
 );
@@ -17,7 +16,6 @@ analyticsRouter.post(
 analyticsRouter.get(
   '/dashboard',
   asyncHandler(async (_req, res) => {
-    // #swagger.tags = ['Analytics']
     res.json(await getDashboardMetrics());
   }),
 );

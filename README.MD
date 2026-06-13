@@ -175,7 +175,6 @@ Deberías ver una respuesta como:
 | `npm start` | Compila y ejecuta en producción |
 | `npm run seed:starter` | Fuerza la recarga del seed starter en una base vacía o de pruebas |
 | `npm run seed:personal` | Carga datos de ejemplo personalizados |
-| `npm run docs:generate` | Regenera la documentación Swagger |
 
 ---
 

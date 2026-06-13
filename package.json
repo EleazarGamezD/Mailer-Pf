@@ -4,8 +4,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json && node dist/docs/swagger.js && node scripts/copy-assets.mjs",
-    "docs:generate": "tsx src/docs/swagger.ts",
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "seed:starter": "tsx src/scripts/seed-starter-content.ts",
     "seed:personal": "tsx src/scripts/seed-personal-content.ts",
     "start": "npm run build && node dist/index.js",
@@ -34,7 +33,6 @@
     "nodemon": "^3.1.14",
     "pdfkit": "^0.18.0",
     "puppeteer": "^24.15.0",
-    "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
