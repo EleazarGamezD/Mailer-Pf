@@ -6,7 +6,6 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1']);
 import { createApp } from './app.js';
 import { connectToDatabase } from './config/db.js';
 import { env } from './config/env.js';
-import { ensureSwaggerDocument } from './docs/swagger.js';
 import { ensureInitialPlatformSetup } from './modules/admin/seed.service.js';
 
 process.on('unhandledRejection', (reason) => {
@@ -19,7 +18,6 @@ process.on('uncaughtException', (error) => {
 });
 
 async function bootstrap() {
-  await ensureSwaggerDocument();
   await connectToDatabase();
   await ensureInitialPlatformSetup();
 

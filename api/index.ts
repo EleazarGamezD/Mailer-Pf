@@ -1,6 +1,5 @@
 import { createApp } from '../src/app.js';
 import { connectToDatabase } from '../src/config/db.js';
-import { ensureSwaggerDocument } from '../src/docs/swagger.js';
 
 type StartupContext = {
   app: ReturnType<typeof createApp>;
@@ -15,8 +14,6 @@ type AppResponse = Parameters<ReturnType<typeof createApp>>[1];
 async function getStartupContext() {
   if (!startupPromise) {
     startupPromise = (async () => {
-      await ensureSwaggerDocument();
-
       const app = createApp();
       const databaseReadyPromise = connectToDatabase();
 
