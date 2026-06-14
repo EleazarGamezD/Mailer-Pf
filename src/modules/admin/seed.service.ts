@@ -582,6 +582,14 @@ async function buildStarterSeedBundle(assets: SeedAssets): Promise<SeedBundle> {
           es: 'Reemplaza este bloque con una historia profesional breve, clara y enfocada en el valor que quieres comunicar en tu portfolio.',
           en: 'Replace this block with a short professional story focused on the value you want to communicate in your portfolio.',
         },
+        contactIntroTitle: {
+          es: 'Di hola!, Say hello!, Say hi!, Let’s talk!',
+          en: 'Di hola!, Say hello!, Say hi!, Let’s talk!',
+        },
+        contactIntro: {
+          es: '¿Listo para crear algo extraordinario juntos? Si tienes un proyecto en mente, buscas colaboración o simplemente quieres charlar sobre desarrollo web, conversemos. Estoy siempre abierto a nuevas oportunidades y desafíos que nos permitan transformar ideas en experiencias digitales memorables. Hablemos de cómo puedo aportar valor a tu próximo proyecto.',
+          en: 'Ready to build something extraordinary together? If you have a project in mind, are looking for collaboration, or just want to talk about web development, let’s talk. I am always open to new opportunities and challenges that transform ideas into memorable digital experiences. Let’s discuss how I can add value to your next project.',
+        },
         heroSlides: [
           {
             title: { es: 'Desarrollador web', en: 'Web developer' },
@@ -755,6 +763,14 @@ async function buildDemoPersonalSeedBundle(assets: SeedAssets): Promise<SeedBund
         about: {
           es: 'Desarrollador Fullstack con experiencia construyendo aplicaciones web, marketplaces y paneles administrativos. Mi enfoque combina producto, arquitectura y ejecucion tecnica para transformar ideas en soluciones funcionales y mantenibles.',
           en: 'Fullstack Developer with experience building web applications, marketplaces, and admin dashboards. My approach combines product thinking, architecture, and technical execution to turn ideas into functional, maintainable solutions.',
+        },
+        contactIntroTitle: {
+          es: 'Di hola!, Say hello!, Say hi!, Let’s talk!',
+          en: 'Di hola!, Say hello!, Say hi!, Let’s talk!',
+        },
+        contactIntro: {
+          es: '¿Listo para crear algo extraordinario juntos? Si tienes un proyecto en mente, buscas colaboración o simplemente quieres charlar sobre desarrollo web, conversemos. Estoy siempre abierto a nuevas oportunidades y desafíos que nos permitan transformar ideas en experiencias digitales memorables. Hablemos de cómo puedo aportar valor a tu próximo proyecto.',
+          en: 'Ready to build something extraordinary together? If you have a project in mind, are looking for collaboration, or just want to talk about web development, let’s talk. I am always open to new opportunities and challenges that transform ideas into memorable digital experiences. Let’s discuss how I can add value to your next project.',
         },
         heroSlides: [
           {
