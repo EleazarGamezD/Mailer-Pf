@@ -50,23 +50,6 @@ function getTransporter() {
   return transporter;
 }
 
-function buildAttachments() {
-  return [
-    { fileName: 'Beefree-logo.png', cid: 'beefree-logo' },
-    { fileName: 'facebook2x.png', cid: 'facebook2x' },
-    { fileName: 'instagram2x.png', cid: 'instagram2x' },
-    { fileName: 'linkedin2x.png', cid: 'linkedin2x' },
-    { fileName: 'MainInvite.png', cid: 'maininvite' },
-    { fileName: 'twitter2x.png', cid: 'twitter2x' },
-    { fileName: 'WaveBottom.png', cid: 'wavebottom' },
-    { fileName: 'WaveTop.png', cid: 'wavetop' },
-  ].map(({ fileName, cid }) => ({
-    filename: fileName,
-    path: path.join(templatesPath, 'images', fileName),
-    cid,
-  }));
-}
-
 export async function sendContactEmail(payload: ContactPayload) {
   const subject = typeof payload.subject === 'string' ? payload.subject : '';
   const message = typeof payload.message === 'string' ? payload.message : '';
@@ -79,7 +62,6 @@ export async function sendContactEmail(payload: ContactPayload) {
   }
 
   const activeTransporter = getTransporter();
-  const attachments = buildAttachments();
 
   const ownerMessage = {
     from: env.mailFrom,
@@ -94,7 +76,6 @@ export async function sendContactEmail(payload: ContactPayload) {
       phone,
       year: new Date().getFullYear(),
     },
-    attachments,
   };
 
   const contactMessage = {
@@ -107,7 +88,6 @@ export async function sendContactEmail(payload: ContactPayload) {
       subject,
       year: new Date().getFullYear(),
     },
-    attachments,
   };
 
   const [ownerResult, contactResult] = await Promise.all([
