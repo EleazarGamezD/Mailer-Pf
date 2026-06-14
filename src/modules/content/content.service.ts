@@ -323,12 +323,7 @@ async function resolveContentItem(resourceName: ContentResourceName, item: Conte
 
   return {
     ...item,
-    icon:
-      resolvedIcon == null
-        ? null
-        : typeof resolvedIcon === 'string'
-          ? resolvedIcon
-          : resolvedIcon.url ?? null,
+    icon: resolvedIcon,
   };
 }
 
